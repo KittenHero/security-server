@@ -97,5 +97,8 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+
 *.db
 .idea/
+*.swp

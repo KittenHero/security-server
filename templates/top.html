@@ -7,3 +7,16 @@
 		<header>
 
 		</header>
+		<nav>
+			<a href='/index'>Home</a>
+			{% if user %}
+			<a href='/logout'>Log out</a>
+			{% else %}
+			<a href='/login'>Log in</a>
+			<a href='/signup'>Create an account</a>
+			{% endif %}
+		</nav>
+		
+		{% if messages %}
+		<p>{{ messages }}</p>
+		{% endif %}
