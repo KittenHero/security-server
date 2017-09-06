@@ -28,7 +28,7 @@ def user_register(username, password):
 #---------------------------------------helper func----------------------------------------
 def compute_hash(password, salt=None, pepper=None):
     if salt is None:
-        salt = ''.join([secrets.choice(printable) for _ in range(8 + secrets.randbits(8))])
+        salt = ''.join([secrets.choice(printable) for _ in range(8 + secrets.randbelow(9))])
     if pepper is None:
         pepper = secrets.choice(hexdigits)
     return SHA512.new((salt + password + pepper).encode()).digest(), salt
