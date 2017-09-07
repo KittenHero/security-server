@@ -25,12 +25,12 @@ def login_form():
 @route('/login', method='POST')
 def login():
     try:
-        user = Database.user_login(request.forms['user'], request.forms['password'])
+        user = Database.Users(request.forms['user'], request.forms['password'])
     except Exception as e:
         return template('login.html', messages=e)
     response.set_cookie(
         'logged_in',
-        user['username'],
+        user.username,
         max_age=600
     )
     return redirect('/index')
@@ -44,7 +44,7 @@ def signup_forms():
 @route('/signup', method='POST')
 def signup():
     try:
-        Database.user_register(request.forms['user'], request.forms['password'])
+        Database.Users.register(request.forms['user'], request.forms['password'])
     except Exception as e:
         return template('signup.html', messages=e)
     return redirect('/login')
