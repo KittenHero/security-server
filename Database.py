@@ -8,7 +8,10 @@ from string import hexdigits, printable
 
 #-------------------------------------core functions-----------------------------------
 class Login:
-    def __init__(self, username, password):
+    def __init__(self, username=None, password=None, **kargs):
+        if kargs:
+            self.__dict__.update(kargs)
+            return
         with Connection() as db:
             user = db.fetch('SELECT * FROM login WHERE username = (?)', username)
             if not user:
@@ -19,10 +22,17 @@ class Login:
                     self.pepper = pepper
                     return
             else:
-                raise Exception('Incorrect password')
+               raise Exception('Incorrect password')
 
     def verify_password(self, password):
-        return self.hashedpwd == compute_hash(password, self.salt, self.pepper)[0]
+        if self.pepper != None:
+            return self.hashedpwd == compute_hash(password, self.salt, self.pepper)[0]
+        for pepper in hexdigits:
+            if self.hashedpwd == compute_hash(password, self.salt, pepper)[0]:
+                self.pepper = pepper
+                return True
+        else:
+            return False
 
     def update_login(self, newpassword):
         self.hashedpwd = compute_hash(newpassword, self.salt, self.pepper)[0]
@@ -45,14 +55,15 @@ class Login:
 
 
 class Users(Login):
-    def __init__(self, username, password):
-        super().__init__(username, password)
-        with Connection() as db:
-            data = db.fetch('SELECT * from users where user_id = (?)', self.user_id)
-            if not data:
-                raise Exception('{} not registered as user' % username)
-            else:
-                self.__dict__.update(data)
+    def __init__(self, username=None, password=None, **kargs):
+        super().__init__(username, password, **kargs)
+        if not kargs:
+            with Connection() as db:
+                data = db.fetch('SELECT * from users where user_id = (?)', self.user_id)
+                if not data:
+                    raise Exception('{} not registered as user' % username)
+                else:
+                    self.__dict__.update(data)
 
     def update_data(self):
         with Connection() as db:
@@ -80,7 +91,8 @@ class Users(Login):
     @staticmethod
     def get_all():
         with Connection() as db:
-            return db.fetch('SELECT * from users JOIN login USING (user_id)')
+            _all = db.fetch('SELECT * from users JOIN login USING (user_id)')
+        return [Users(**info) for info in _all]
 
     @staticmethod
     def generate_medicare():
@@ -98,10 +110,11 @@ class Users(Login):
         return True
 
 class Medical_Professionals(Users):
-    def __init__(self, username, password):
-        super().__init__(username, password)
-        with Connection() as db:
-            is_valid = db.fetch('SELECT (?) in medical_professionals', self.user_id)
+    def __init__(self, username=None, password=None, **kargs):
+        super().__init__(username, password, **kargs)
+        if not kargs:
+            with Connection() as db:
+                is_valid = db.fetch('SELECT (?) in medical_professionals', self.user_id)
             if not is_valid:
                 raise Exception('{} not registered as Medical_Professionals' % username)
 
@@ -114,11 +127,12 @@ class Medical_Professionals(Users):
     @staticmethod
     def get_all():
         with Connection() as db:
-            return db.fetch('''
+            _all = db.fetch('''
             SELECT * from medical_professionals
             JOIN users USING (user_id)
             JOIN login USING (user_id)
             ''')
+            return [Medical_Professionals(**info) for info in _all]
 
 #---------------------------------------helper func----------------------------------------
 def compute_hash(password, salt=None, pepper=None):

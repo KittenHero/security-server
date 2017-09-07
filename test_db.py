@@ -42,7 +42,7 @@ class Test_Users(TestCase):
 
     def test_all(self):
         expected = [db.Users(*login).user_id for login in self.login]
-        self.assertListEqual(expected, [user['user_id'] for user in db.Users.get_all()])
+        self.assertListEqual(expected, [user.user_id for user in db.Users.get_all()])
 
     def test_update(self):
         for login, med_id in zip(self.login, self.medicare):
@@ -62,7 +62,7 @@ class Test_Users(TestCase):
 
     def test_medicare_gen(self):
         med_id = db.Users.generate_medicare()
-        existing = [user['medicare_id'] for user in db.Users.get_all()]
+        existing = [user.medicare_id for user in db.Users.get_all()]
         self.assertNotIn(med_id, existing)
 
 if __name__ == '__main__':
