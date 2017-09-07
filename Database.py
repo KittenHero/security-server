@@ -203,6 +203,10 @@ class RebateRequest:
         with Connection() as db:
             db.execute('DELETE FROM rebate_requests WHERE request_id = (?)', self.request_id)
 
+    @staticmethod
+    def get_all():
+        pass
+
 class MedicalHistory:
     def __init__(self, **kargs):
         self.__dict__.update(kargs)
@@ -220,6 +224,10 @@ class MedicalHistory:
         with Connection() as db:
             db.execute('DELETE FROM medical_history WHERE history_id = (?)', self.history_id)
 
+    @staticmethod
+    def get_all():
+        pass
+
 class Prescription:
     def __init__(**kargs):
         self.__dict__.update(kargs)
@@ -228,6 +236,37 @@ class Prescription:
         pass
 
     def delete(self):
+        pass
+
+    @staticmethod
+    def get_all():
+        pass
+
+class Staff(Login):
+    def __init__(self, **kargs):
+        pass
+
+    def process_requests(self, request, approved):
+        pass
+
+    @classmethod
+    def register(cls):
+        pass
+
+    @staticmethod
+    def get_all():
+        pass
+
+class Admin(Login):
+    def __init__(self, **kargs):
+        pass
+
+    @classmethod
+    def register(cls):
+        pass
+
+    @staticmethod
+    def get_all():
         pass
 
 #---------------------------------------helper func----------------------------------------
