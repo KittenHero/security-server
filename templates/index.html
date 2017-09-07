@@ -1,3 +1,5 @@
-{% include 'top.html' %}
+% setdefault('messages', None)
+% setdefault('user', None)
+% include('top.html', messages=messages, user=user)
 	<p>Hello {{ user }}</p>
-{% include 'bottom.html' %}
+% include('bottom.html')

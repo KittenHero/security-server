@@ -1,7 +1,7 @@
 from bottle import route, get, post, redirect, error
 from bottle import request, response
 from bottle import run
-from bottle import jinja2_template as template
+from bottle import template
 from bottle import TEMPLATE_PATH
 import Database
 
@@ -25,7 +25,7 @@ def login_form():
 @route('/login', method='POST')
 def login():
     try:
-        user = Database.Users(request.forms['user'], request.forms['password'])
+        user = Database.User(request.forms['user'], request.forms['password'])
     except Exception as e:
         return template('login.html', messages=e)
     response.set_cookie(
@@ -44,7 +44,7 @@ def signup_forms():
 @route('/signup', method='POST')
 def signup():
     try:
-        Database.Users.register(request.forms['user'], request.forms['password'])
+        Database.User.register(request.forms['user'], request.forms['password'])
     except Exception as e:
         return template('signup.html', messages=e)
     return redirect('/login')

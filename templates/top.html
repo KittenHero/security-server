@@ -9,14 +9,14 @@
 		</header>
 		<nav>
 			<a href='/index'>Home</a>
-			{% if user %}
+			% if user:
 			<a href='/logout'>Log out</a>
-			{% else %}
+			% else:
 			<a href='/login'>Log in</a>
 			<a href='/signup'>Create an account</a>
-			{% endif %}
+			% end
 		</nav>
 		
-		{% if messages %}
+		% if messages:
 		<p>{{ messages }}</p>
-		{% endif %}
+		% end
