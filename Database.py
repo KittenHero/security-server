@@ -73,15 +73,24 @@ class Users(Login):
             WHERE user_id = :user_id
             ''', **self.__dict__)
 
+    def get_prescriptions(self):
+        with Connection() as db:
+            pres = db.fetch('SELECT * from prescriptions WHERE user_id = (?)', self.user_id)
+        return pres
+
+
     def get_history(self):
         with Connection() as db:
-            return db.fetch('SELECT * from medical_history WHERE user_id = (?)', self.user_id)
+            res = db.fetch('SELECT * from medical_history WHERE user_id = (?)', self.user_id)
+        if type(res) == dict:
+            res = [res]
+        return [MedicalHistory(**info) for info in res]
 
     def get_requests(self):
         with Connection() as db:
             requests = db.fetch('SELECT * from rebate_requests WHERE user_id = (?)', self.user_id)
         if type(requests) == dict:
-            return RebateRequest(**requests)
+            requests = [requests]
         return [RebateRequest(**info) for info in requests]
 
     def make_request(self, amount, reason, request_date=None):
@@ -91,9 +100,10 @@ class Users(Login):
                 (user_id, amount, reason, request_date)
                 values (?, ?, ?, COALESCE(?, date('now')))
                 ''', self.user_id, amount, reason, request_date)
-            return db.fetch('''
+            _id = db.fetch('''
                 SELECT MAX(request_id) FROM rebate_requests 
                 WHERE user_id = (?)''', self.user_id).popitem()[1]
+        return _id
 
     @classmethod
     def register(cls, username, password):
@@ -132,6 +142,26 @@ class MedicalProfessionals(Users):
             if not is_valid:
                 raise Exception('{} not registered as Medical_Professionals' % username)
 
+    def append_record(self, user, summary, details):
+        pass
+
+    def prescribe(self, user, medicine, dosage, frequency, time):
+        with Connection() as db:
+            db.execute('''
+                INSERT INTO prescriptions
+                (user_id, medication, dosage,
+                frequency, time, prescribed_by)
+                VALUES
+                (?, ?, ?, ?, ?, ?)
+                ''', user.user_id, medicine,
+                dosage, frequency, time, self.user_id)
+            _id = db.fetch('''
+                SELECT MAX(prescription_id) 
+                FROM prescriptions 
+                WHERE prescribed_by = (?)
+                ''', self.user_id).popitem()[1]
+        return _id
+
     @classmethod
     def register(cls, username, password):
         user_id = super().register(username, password)
@@ -163,6 +193,38 @@ class RebateRequest:
                 date_processed = :date_processed
                 WHERE request_id = :request_id
                 ''', **self.__dict__)
+
+    def delete(self):
+        with Connection() as db:
+            db.execute('DELETE FROM rebate_requests WHERE request_id = (?)', self.request_id)
+
+class MedicalHistory:
+    def __init__(self, **kargs):
+        self.__dict__.update(kargs)
+
+    def update(self):
+        with Connection() as db:
+            db.execute('''
+                UPDATE medical_history SET
+                summary = :summary,
+                details = :details
+                WHERE history_id = :history_id
+                ''', **self.__dict__)
+
+    def delete(self):
+        with Connection() as db:
+            db.execute('DELETE FROM medical_history WHERE history_id = (?)', self.history_id)
+
+class Prescription:
+    def __init__(**kargs):
+        self.__dict__.update(kargs)
+
+    def update(self):
+        pass
+
+    def delete(self):
+        pass
+
 #---------------------------------------helper func----------------------------------------
 def compute_hash(password, salt=None, pepper=None):
     if salt is None:

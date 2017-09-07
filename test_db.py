@@ -63,7 +63,7 @@ class TestUsers(TestCase):
         request['user_id'] = self.user_id[0]
         for key in ('processed_by', 'date_processed', 'approved'):
             request[key] = None
-        self.assertEqual(request, user.get_requests().__dict__)
+        self.assertEqual(request, user.get_requests()[0].__dict__)
 
         another = {'amount':200, 'reason':'test'}
         req_id = user.make_request(**another)

@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS admin (
 );
 
 CREATE TABLE IF NOT EXISTS medical_history (
-  history_id INTEGER PRIMARY KEY,
+	history_id INTEGER PRIMARY KEY,
 	created_at VARCHAR DEFAULT (date('now')),
 	user_id INTEGER NOT NULL,
 	summary VARCHAR,
