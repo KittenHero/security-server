@@ -34,19 +34,9 @@ def compute_hash(password, salt=None, pepper=None):
     return SHA512.new((salt + password + pepper).encode()).digest(), salt
 
 def database_setup():
-    print('Setting up database')
-    with Connection() as db:
-        print('Creating user table')
-        db.execute(
-        '''
-        CREATE TABLE IF NOT EXISTS users (
-            user_id INTEGER PRIMARY KEY,
-            username VARCHAR(32) UNIQUE,
-            hashedpwd BYTE(64) NOT NULL,
-            salt VARCHAR(8,16) NOT NULL
-        )
-        '''
-        )
+    with open('ddl.qsl') as ddl:
+        with Connection() as db:
+            db.con.executescript(ddl.read())
 
 class Connection(sqlite3.Connection):
     def __init__(self, database='database.db', **kargs):
