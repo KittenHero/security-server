@@ -81,6 +81,17 @@ class Users(Login):
         with Connection() as db:
             return db.fetch('SELECT * from rebate_requests WHERE user_id = (?)', self.user_id)
 
+    def make_request(self, amount, reason, request_date=None):
+        with Connection() as db:
+            db.execute('''
+                INSERT INTO rebate_requests
+                (user_id, amount, reason, request_date)
+                values (?, ?, ?, COALESCE(?, date('now')))
+                ''', self.user_id, amount, reason, request_date)
+            return db.fetch('''
+                SELECT MAX(request_id) FROM rebate_requests 
+                WHERE user_id = (?)''', self.user_id).popitem()[1]
+
     @classmethod
     def register(cls, username, password):
         user_id = super().register(username, password)
