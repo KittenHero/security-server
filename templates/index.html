@@ -1,5 +1,7 @@
 % setdefault('messages', None)
 % setdefault('user', None)
 % include('top.html', messages=messages, user=user)
-	<p>Hello {{ user }}</p>
+	% for key, val in user.items():
+		<p>{{key}} : {{repr(val)}}</p>
+	% end
 % include('bottom.html')

@@ -4,16 +4,18 @@ from bottle import run
 from bottle import template
 from bottle import TEMPLATE_PATH
 import Database
-
+import secrets
+from string import printable
+secret = ''.join([secrets.choice(printable) for _ in range(16)])
 #------------------------------main logic---------------------------
 @route('/')
 @route('/index')
 def index():
-    user = request.get_cookie('logged_in')
+    user = request.get_cookie('logged_in', secret=secret)
     if not user:
         return redirect('/login')
     else:
-        return template('index.html', user=user)
+        return template('index.html', user=user.__dict__)
 
 @route('/login', method='GET')
 def login_form():
@@ -30,8 +32,9 @@ def login():
         return template('login.html', messages=e)
     response.set_cookie(
         'logged_in',
-        user.username,
-        max_age=600
+        user,
+        max_age=600,
+        secret=secret
     )
     return redirect('/index')
 
