@@ -8,7 +8,6 @@ CREATE TABLE IF NOT EXISTS login (
 CREATE TABLE IF NOT EXISTS users (
 	user_id INTEGER,
 	medicare_id VARCHAR UNIQUE,
-	authorised BOOLEAN NOT NULL DEFAULT FALSE,
   FOREIGN KEY (user_id) REFERENCES login(user_id)
 );
 CREATE TABLE IF NOT EXISTS medical_professionals (

@@ -78,7 +78,7 @@ class Users(Login):
         return user_id
 
     @staticmethod
-    def all():
+    def get_all():
         with Connection() as db:
             return db.fetch('SELECT * from users JOIN login USING (user_id)')
 
@@ -88,9 +88,10 @@ class Users(Login):
             return ''.join([str(random.choice(range(9))) for _ in range(10)])
         with Connection() as db:
             med_id = random_id()
-            while db.fetch('SELECT (?) in users.medicare_id', med_id):
-                med_id = random_id()
-            return med_id
+            existing = db.fetch('SELECT medicare_id FROM users')
+        while med_id in existing:
+            med_id = random_id()
+        return med_id
 
     @staticmethod
     def validate_medicare(medicare_id):
@@ -111,7 +112,7 @@ class Medical_Professionals(Users):
             db.execute('INSERT INTO medical_professionals VALUES (?)', user_id)
 
     @staticmethod
-    def all():
+    def get_all():
         with Connection() as db:
             return db.fetch('''
             SELECT * from medical_professionals
