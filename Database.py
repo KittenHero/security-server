@@ -54,7 +54,7 @@ class Login:
             return db.fetch('SELECT user_id FROM login WHERE username = (?)', username)['user_id']
 
 
-class Users(Login):
+class User(Login):
     def __init__(self, username=None, password=None, **kargs):
         super().__init__(username, password, **kargs)
         if not kargs:
@@ -116,7 +116,7 @@ class Users(Login):
     def get_all():
         with Connection() as db:
             _all = db.fetch('SELECT * from users JOIN login USING (user_id)')
-        return [Users(**info) for info in _all]
+        return [User(**info) for info in _all]
 
     @staticmethod
     def generate_medicare():
@@ -133,7 +133,7 @@ class Users(Login):
     def validate_medicare(medicare_id):
         return True
 
-class MedicalProfessionals(Users):
+class MedicalProfessional(User):
     def __init__(self, username=None, password=None, **kargs):
         super().__init__(username, password, **kargs)
         if not kargs:
@@ -176,7 +176,7 @@ class MedicalProfessionals(Users):
             JOIN users USING (user_id)
             JOIN login USING (user_id)
             ''')
-        return [MedicalProfessionals(**info) for info in _all]
+        return [MedicalProfessional(**info) for info in _all]
 
 class RebateRequest:
     def __init__(self, **kargs):

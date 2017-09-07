@@ -30,7 +30,7 @@ class TestLogin(TestCase):
         relogin = db.Login(*self.login)
         self.assertEqual(self.user_id, relogin.user_id)
 
-class TestUsers(TestCase):
+class TestUser(TestCase):
     @classmethod
     def setUpClass(cls):
         db.reset_database()
@@ -38,25 +38,25 @@ class TestUsers(TestCase):
         passwords = ['1234', 'secure', 'potato', 'nomnom']
         cls.medicare = ['132323231', '1230939093', '90303990', '03908030']
         cls.login = list(starmap(logintuple, zip(usernames, passwords)))
-        cls.user_id = [db.Users.register(*login) for login in cls.login]
+        cls.user_id = [db.User.register(*login) for login in cls.login]
 
     def test_all(self):
         unexpected = db.Login.register('random', 'password')
-        expected = [db.Users(*login).user_id for login in self.login]
-        self.assertListEqual(expected, [user.user_id for user in db.Users.get_all()])
+        expected = [db.User(*login).user_id for login in self.login]
+        self.assertListEqual(expected, [user.user_id for user in db.User.get_all()])
 
     def test_update(self):
         for login, med_id in zip(self.login, self.medicare):
-            user = db.Users(*login)
+            user = db.User(*login)
             user.medicare_id = med_id
             user.update_data()
-            self.assertEqual(med_id, db.Users(*login).medicare_id)
+            self.assertEqual(med_id, db.User(*login).medicare_id)
 
     def test_history(self):
         pass
 
     def test_request(self):
-        user = db.Users(*self.login[0])
+        user = db.User(*self.login[0])
         request = {'amount':500, 'reason':'precription', 'request_date':'2017-03-02'}
         req_id = user.make_request(**request)
         request['request_id'] = req_id
@@ -74,17 +74,17 @@ class TestUsers(TestCase):
         pass
 
     def test_medicare_gen(self):
-        med_id = db.Users.generate_medicare()
-        existing = [user.medicare_id for user in db.Users.get_all()]
+        med_id = db.User.generate_medicare()
+        existing = [user.medicare_id for user in db.User.get_all()]
         self.assertNotIn(med_id, existing)
-        self.assertNotEqual(med_id, db.Users.generate_medicare())
+        self.assertNotEqual(med_id, db.User.generate_medicare())
 
 class TestRebateRequest:
     def test_update(self):
         db.reset_database()
         username, pwd = 'johnti', 'defcon'
-        db.Users.register(username, pwd)
-        user = db.Users(username, pwd)
+        db.User.register(username, pwd)
+        user = db.User(username, pwd)
         user.make_request(amount=400, reason='why not')
         req = user.get_requests()
         req.approved = True
@@ -98,12 +98,12 @@ class TestProfessional(TestCase):
         users = ['brinkley', 'freeze', 'doom']
         passwords = [' ', 'correct', 'asdf']
         cls.login = list(starmap(logintuple, zip(users, passwords)))
-        cls.user_id = [db.MedicalProfessionals.register(*login) for login in cls.login]
+        cls.user_id = [db.MedicalProfessional.register(*login) for login in cls.login]
 
     def test_all(self):
-        unexpected = db.Users.register('random', 'password')
-        expected = [db.MedicalProfessionals(*login).user_id for login in self.login]
-        self.assertListEqual(expected, [user.user_id for user in db.MedicalProfessionals.get_all()])
+        unexpected = db.User.register('random', 'password')
+        expected = [db.MedicalProfessional(*login).user_id for login in self.login]
+        self.assertListEqual(expected, [user.user_id for user in db.MedicalProfessional.get_all()])
 
 if __name__ == '__main__':
     main()
