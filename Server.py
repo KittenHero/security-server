@@ -19,7 +19,7 @@ def index():
 
 @route('/login', method='GET')
 def login_form():
-    if request.get_cookie('logged_in'):
+    if request.get_cookie('logged_in', secret=secret):
         return redirect('/index')
     else:
         return template('login.html')
@@ -40,7 +40,7 @@ def login():
 
 @route('/signup', method='GET')
 def signup_forms():
-    if request.get_cookie('logged_in'):
+    if request.get_cookie('logged_in', secret=secret):
         return redirect('/index')
     else: return template('signup.html')
 
