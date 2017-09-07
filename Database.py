@@ -165,8 +165,13 @@ class MedicalProfessional(User):
     @classmethod
     def register(cls, username, password):
         user_id = super().register(username, password)
+        cls.register_existing(user_id)
+
+    @classmethod
+    def register_existing(cls, user_id):
         with Connection() as db:
             db.execute('INSERT INTO medical_professionals VALUES (?)', user_id)
+
 
     @staticmethod
     def get_all():
