@@ -79,7 +79,10 @@ class Users(Login):
 
     def get_requests(self):
         with Connection() as db:
-            return db.fetch('SELECT * from rebate_requests WHERE user_id = (?)', self.user_id)
+            requests = db.fetch('SELECT * from rebate_requests WHERE user_id = (?)', self.user_id)
+        if type(requests) == dict:
+            return RebateRequest(**requests)
+        return [RebateRequest(**info) for info in requests]
 
     def make_request(self, amount, reason, request_date=None):
         with Connection() as db:
@@ -120,7 +123,7 @@ class Users(Login):
     def validate_medicare(medicare_id):
         return True
 
-class Medical_Professionals(Users):
+class MedicalProfessionals(Users):
     def __init__(self, username=None, password=None, **kargs):
         super().__init__(username, password, **kargs)
         if not kargs:
@@ -143,8 +146,23 @@ class Medical_Professionals(Users):
             JOIN users USING (user_id)
             JOIN login USING (user_id)
             ''')
-            return [Medical_Professionals(**info) for info in _all]
+        return [MedicalProfessionals(**info) for info in _all]
 
+class RebateRequest:
+    def __init__(self, **kargs):
+        self.__dict__.update(kargs)
+
+    def update(self):
+        with Connection() as db:
+            db.execute('''
+                UPDATE rebate_requests SET
+                amount = :amount, reason = :reason
+                request_date = :request_date,
+                approved = :approved,
+                processed_by = :processed_by,
+                date_processed = :date_processed
+                WHERE request_id = :request_id
+                ''', **self.__dict__)
 #---------------------------------------helper func----------------------------------------
 def compute_hash(password, salt=None, pepper=None):
     if salt is None:

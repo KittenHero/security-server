@@ -63,12 +63,12 @@ class TestUsers(TestCase):
         request['user_id'] = self.user_id[0]
         for key in ('processed_by', 'date_processed', 'approved'):
             request[key] = None
-        self.assertEqual(request, user.get_requests())
+        self.assertEqual(request, user.get_requests().__dict__)
 
         another = {'amount':200, 'reason':'test'}
         req_id = user.make_request(**another)
-        request = filter(lambda r: r['request_id'] == req_id, user.get_requests())
-        self.assertIsNotNone(next(request)['request_date'])
+        request = filter(lambda r: r.request_id == req_id, user.get_requests())
+        self.assertIsNotNone(next(request).request_date)
 
     def test_valid_medicare(self):
         pass
@@ -79,6 +79,18 @@ class TestUsers(TestCase):
         self.assertNotIn(med_id, existing)
         self.assertNotEqual(med_id, db.Users.generate_medicare())
 
+class TestRebateRequest:
+    def test_update(self):
+        db.reset_database()
+        username, pwd = 'johnti', 'defcon'
+        db.Users.register(username, pwd)
+        user = db.Users(username, pwd)
+        user.make_request(amount=400, reason='why not')
+        req = user.get_requests()
+        req.approved = True
+        req.update()
+        self.assertEqual(req.__dict__, user.get_requests().__dict__)
+
 class TestProfessional(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -86,12 +98,12 @@ class TestProfessional(TestCase):
         users = ['brinkley', 'freeze', 'doom']
         passwords = [' ', 'correct', 'asdf']
         cls.login = list(starmap(logintuple, zip(users, passwords)))
-        cls.user_id = [db.Medical_Professionals.register(*login) for login in cls.login]
+        cls.user_id = [db.MedicalProfessionals.register(*login) for login in cls.login]
 
     def test_all(self):
         unexpected = db.Users.register('random', 'password')
-        expected = [db.Medical_Professionals(*login).user_id for login in self.login]
-        self.assertListEqual(expected, [user.user_id for user in db.Medical_Professionals.get_all()])
+        expected = [db.MedicalProfessionals(*login).user_id for login in self.login]
+        self.assertListEqual(expected, [user.user_id for user in db.MedicalProfessionals.get_all()])
 
 if __name__ == '__main__':
     main()
