@@ -1,4 +1,5 @@
 import Database as db
+import sqlite3
 from unittest import main, TestCase
 from collections import namedtuple
 from itertools import starmap
@@ -30,6 +31,17 @@ class TestLogin(TestCase):
         relogin = db.Login(*self.login)
         self.assertEqual(self.user_id, relogin.user_id)
 
+        self.assertRaises(sqlite3.IntegrityError ,db.User.register, self.login.user, self.login.pwd)
+
+    def test_assignment(self):
+        user = db.Login(*self.login)
+        user.username = 'new_username'
+
+        def reassign_id(user, new_id):
+            user.user_id = new_id
+        self.assertRaises(AttributeError, reassign_id, user, new_id=5)
+
+
 class TestUser(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -52,7 +64,7 @@ class TestUser(TestCase):
             user.update_data()
             self.assertEqual(med_id, db.User(*login).medicare_id)
 
-    def test_history(self):
+    def test_record(self):
         pass
 
     def test_request(self):
@@ -104,6 +116,46 @@ class TestProfessional(TestCase):
         unexpected = db.User.register('random', 'password')
         expected = [db.MedicalProfessional(*login).user_id for login in self.login]
         self.assertListEqual(expected, [user.user_id for user in db.MedicalProfessional.get_all()])
+
+    def test_medical_record(self):
+        doc = db.MedicalProfessional(*self.login[0])
+        patient = db.User(*self.login[1])
+
+        self.assertFalse(patient.get_record())
+
+        exp_record = {'summary':'heart failure', 'details':'Ni'*sum(ord(ch) for ch in 'Ni')}
+        doc.append_record(patient, **exp_record)
+        record = patient.get_record()[0]
+
+        self.assertEqual(exp_record['summary'], record.summary)
+        self.assertEqual(exp_record['details'], record.details)
+        self.assertEqual(doc.user_id, record.recorded_by)
+        self.assertEqual(patient.user_id, record.user_id)
+        self.assertIsNotNone(record.created_at)
+
+    def test_prescription(self):
+        doc = db.MedicalProfessional(*self.login[0])
+        patient = db.User(*self.login[0])
+
+        self.assertFalse(patient.get_prescriptions())
+
+        medication = {
+            'medicine':'LSD',
+            'dosage':'50 mg',
+            'frequency':'2 p. day',
+            'time':'30 mins before/after sleep'
+        }
+        doc.prescribe(patient,**medication)
+        prescription = patient.get_prescriptions()[0]
+
+        self.assertEqual(medication['medicine'], prescription.medication)
+        self.assertEqual(medication['dosage'], prescription.dosage)
+        self.assertEqual(medication['frequency'], prescription.frequency)
+        self.assertEqual(medication['time'], prescription.time)
+        self.assertEqual(doc.user_id, prescription.prescribed_by)
+        self.assertEqual(patient.user_id, prescription.user_id)
+        self.assertIsNotNone(prescription.date_prescribed)
+
 
 if __name__ == '__main__':
     main()
