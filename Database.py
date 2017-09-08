@@ -7,35 +7,54 @@ import traceback as tb
 from string import hexdigits, printable
 
 #-------------------------------------core functions-----------------------------------
-class Login:
+class Login(object):
+    '''
+    Base class for Users, Staff and Admins
+    '''
     def __init__(self, username=None, password=None, **kargs):
+        '''
+        Retrieves user from database and verifies password.
+
+        Raises Exception if username/passwords are incorrect
+
+        fields:
+            username
+            hashedpwd
+            salt
+            pepper
+            user_id
+        '''
         if kargs:
             self.__dict__.update(kargs)
             return
         with Connection() as db:
             user = db.fetch('SELECT * FROM login WHERE username = (?)', username)
             if not user:
-                raise Exception('{} not registed'.format(username))
-            for pepper in hexdigits:
-                if user['hashedpwd'] == compute_hash(password, user['salt'], pepper)[0]:
-                    self.__dict__.update(user)
-                    self.pepper = pepper
-                    return
-            else:
-               raise Exception('Incorrect password')
+                raise LookupError('{} not registed'.format(username))
+            self.__dict__.update(user)
+
+            if not self.verify_password(password):
+               raise ValueError('Incorrect password')
 
     def verify_password(self, password):
-        if self.pepper != None:
+        try:
             return self.hashedpwd == compute_hash(password, self.salt, self.pepper)[0]
-        for pepper in hexdigits:
-            if self.hashedpwd == compute_hash(password, self.salt, pepper)[0]:
-                self.pepper = pepper
-                return True
-        else:
-            return False
+        except AttributeError:
+            for pepper in hexdigits:
+                if self.hashedpwd == compute_hash(password, self.salt, pepper)[0]:
+                    self.pepper = pepper
+                    return True
+            else:
+                    return False
 
-    def update_login(self, newpassword):
-        self.hashedpwd = compute_hash(newpassword, self.salt, self.pepper)[0]
+    def update_login(self, newpassword=None):
+        '''
+        Writes Login username and password back to database.
+
+        raises sqlite3.IntegrityError if username is taken
+        '''
+        if newpassword:
+            self.hashedpwd = compute_hash(newpassword, self.salt, self.pepper)[0]
         with Connection() as db:
             db.execute('''
             UPDATE login SET
@@ -44,49 +63,78 @@ class Login:
             WHERE user_id = :user_id
             ''', **self.__dict__)
 
+    def __setattr__(self, name, value):
+        if name == 'user_id':
+            raise AttributeError('cannot change user_id')
+        super().__setattr__(name, value)
+
     @classmethod
     def register(cls, username, password):
+        '''
+        Creates new login in the database.
+        returns id of the new user
+
+        raises sqlite3.IntegrityError if username is taken
+        '''
         with Connection() as db:
             db.execute(
                 'INSERT INTO login(username, hashedpwd, salt) VALUES (?, ?, ?)',
                 username, *compute_hash(password)
             )
-            return db.fetch('SELECT user_id FROM login WHERE username = (?)', username)['user_id']
-
+            _id = db.fetch('SELECT user_id FROM login WHERE username = (?)', username)['user_id']
+        return _id
 
 class User(Login):
     def __init__(self, username=None, password=None, **kargs):
+        '''
+        additional fields:
+            medicare_id
+        '''
         super().__init__(username, password, **kargs)
         if not kargs:
             with Connection() as db:
                 data = db.fetch('SELECT * from users where user_id = (?)', self.user_id)
                 if not data:
-                    raise Exception('{} not registered as user' % username)
+                    raise LookupError('{} not registered as user' % username)
                 else:
                     self.__dict__.update(data)
 
     def update_data(self):
+        '''
+        Stores medicare_id of current user into database
+        '''
         with Connection() as db:
             db.execute('''
-            UPDATE users 
+            UPDATE users
             SET medicare_id = :medicare_id
             WHERE user_id = :user_id
             ''', **self.__dict__)
 
     def get_prescriptions(self):
+        '''
+        returns a list of prescriptions
+        '''
         with Connection() as db:
             pres = db.fetch('SELECT * from prescriptions WHERE user_id = (?)', self.user_id)
-        return pres
+        if type(pres) == dict:
+            pres = [pres]
+        return [Prescription(**info) for info in pres]
 
 
-    def get_history(self):
+    def get_record(self):
+        '''
+        Fetch a list of all medical records belonging to the user.
+        '''
         with Connection() as db:
-            res = db.fetch('SELECT * from medical_history WHERE user_id = (?)', self.user_id)
+            res = db.fetch('SELECT * from medical_record WHERE user_id = (?)', self.user_id)
         if type(res) == dict:
             res = [res]
-        return [MedicalHistory(**info) for info in res]
+        return [MedicalRecord(**info) for info in res]
 
     def get_requests(self):
+        '''
+        Fetch a list of all requests made by the user.
+        '''
         with Connection() as db:
             requests = db.fetch('SELECT * from rebate_requests WHERE user_id = (?)', self.user_id)
         if type(requests) == dict:
@@ -94,19 +142,24 @@ class User(Login):
         return [RebateRequest(**info) for info in requests]
 
     def make_request(self, amount, reason, request_date=None):
+        '''
+        Issues a new rebate request.
+        returns request_id
+        '''
         with Connection() as db:
             db.execute('''
                 INSERT INTO rebate_requests
                 (user_id, amount, reason, request_date)
                 values (?, ?, ?, COALESCE(?, date('now')))
                 ''', self.user_id, amount, reason, request_date)
-            _id = db.fetch('''
-                SELECT MAX(request_id) FROM rebate_requests 
-                WHERE user_id = (?)''', self.user_id).popitem()[1]
+            _id = db.fetch('SELECT MAX(request_id) as id FROM rebate_requests')['id']
         return _id
 
     @classmethod
     def register(cls, username, password):
+        '''
+        Register a new user in the database.
+        '''
         user_id = super().register(username, password)
         with Connection() as db:
             db.execute('INSERT INTO users(user_id) VALUES (?)', user_id)
@@ -116,7 +169,18 @@ class User(Login):
     def get_all():
         with Connection() as db:
             _all = db.fetch('SELECT * from users JOIN login USING (user_id)')
+        if type(_all) == dict:
+            _all = [_all]
         return [User(**info) for info in _all]
+
+    @staticmethod
+    def with_id(user_id):
+        with Connection() as db:
+            data = db.fetch('''
+            SELECT * from users
+            WHERE user_id = (?)
+            ''', user_id)
+        return User(**data)
 
     @staticmethod
     def generate_medicare():
@@ -140,12 +204,26 @@ class MedicalProfessional(User):
             with Connection() as db:
                 is_valid = db.fetch('SELECT (?) in medical_professionals', self.user_id)
             if not is_valid:
-                raise Exception('{} not registered as Medical_Professionals' % username)
+                raise LookupError('{} not registered as Medical_Professionals' % username)
 
     def append_record(self, user, summary, details):
-        pass
+        '''
+        Add a record to a patient's medical record.
+        '''
+        with Connection() as db:
+            db.execute('''
+                INSERT INTO medical_record
+                (user_id, summary, details, recorded_by)
+                VALUES (?, ?, ?, ?)
+                ''', user.user_id, summary, details, self.user_id)
+            _id = db.fetch('SELECT MAX(record_id) as id FROM medical_record')['id']
+        return _id
+
 
     def prescribe(self, user, medicine, dosage, frequency, time):
+        '''
+        Prescribe medication to a patient.
+        '''
         with Connection() as db:
             db.execute('''
                 INSERT INTO prescriptions
@@ -155,11 +233,7 @@ class MedicalProfessional(User):
                 (?, ?, ?, ?, ?, ?)
                 ''', user.user_id, medicine,
                 dosage, frequency, time, self.user_id)
-            _id = db.fetch('''
-                SELECT MAX(prescription_id) 
-                FROM prescriptions 
-                WHERE prescribed_by = (?)
-                ''', self.user_id).popitem()[1]
+            _id = db.fetch('SELECT MAX(prescription_id) as id FROM prescriptions')['id']
         return _id
 
     @classmethod
@@ -169,9 +243,20 @@ class MedicalProfessional(User):
 
     @classmethod
     def register_existing(cls, user_id):
+        '''
+        Register existing User as a Medical Professional
+        '''
         with Connection() as db:
             db.execute('INSERT INTO medical_professionals VALUES (?)', user_id)
 
+    @staticmethod
+    def with_id(user_id):
+        with Connection() as db:
+            data = db.fetch('''
+            SELECT * from medical_professionals
+            WHERE user_id = (?)
+            ''', user_id)
+        return MedicalProfessional(**data)
 
     @staticmethod
     def get_all():
@@ -181,9 +266,11 @@ class MedicalProfessional(User):
             JOIN users USING (user_id)
             JOIN login USING (user_id)
             ''')
+        if type(_all) == dict:
+            _all = [_all]
         return [MedicalProfessional(**info) for info in _all]
 
-class RebateRequest:
+class RebateRequest(object):
     def __init__(self, **kargs):
         self.__dict__.update(kargs)
 
@@ -205,31 +292,35 @@ class RebateRequest:
 
     @staticmethod
     def get_all():
-        pass
+        with Connection() as db:
+            _all = db.fetch('SELECT * from rebate_requests')
+        if type(_all) == dict:
+            _all = [_all]
+        return [RebateRequest(**info) for info in _all]
 
-class MedicalHistory:
+class MedicalRecord:
     def __init__(self, **kargs):
         self.__dict__.update(kargs)
 
     def update(self):
         with Connection() as db:
             db.execute('''
-                UPDATE medical_history SET
+                UPDATE medical_record SET
                 summary = :summary,
                 details = :details
-                WHERE history_id = :history_id
+                WHERE record_id = :record_id
                 ''', **self.__dict__)
 
     def delete(self):
         with Connection() as db:
-            db.execute('DELETE FROM medical_history WHERE history_id = (?)', self.history_id)
+            db.execute('DELETE FROM medical_record WHERE record_id = (?)', self.record_id)
 
     @staticmethod
     def get_all():
         pass
 
 class Prescription:
-    def __init__(**kargs):
+    def __init__(self, **kargs):
         self.__dict__.update(kargs)
 
     def update(self):
@@ -243,14 +334,20 @@ class Prescription:
         pass
 
 class Staff(Login):
-    def __init__(self, **kargs):
-        pass
+    def __init__(self, username=None, password=None, **kargs):
+        super().__init__(username, password, **kargs)
+        if not kargs:
+            with Connection() as db:
+                is_valid = db.fetch('SELECT (?) in Staff', self.user_id)
+            if not is_valid:
+                raise LookupError('{} not registered as Staff' % username)
 
     def process_requests(self, request, approved):
         pass
 
     @classmethod
-    def register(cls):
+    def register(cls, username, password):
+        user_id = super().register(username, password)
         pass
 
     @staticmethod
@@ -258,16 +355,26 @@ class Staff(Login):
         pass
 
 class Admin(Login):
-    def __init__(self, **kargs):
-        pass
+    def __init__(self, username=None, password=None, **kargs):
+        super().__init__(username, password, **kargs)
+        if not kargs:
+            with Connection() as db:
+                is_valid = db.fetch('SELECT (?) in Admin', self.user_id)
+            if not is_valid:
+                raise LookupError('{} not registered as Admin' % username)
 
     @classmethod
-    def register(cls):
+    def register(cls, username, password):
+        user_id = super().register(username, password)
         pass
 
     @staticmethod
     def get_all():
-        pass
+        with Connection() as db:
+            _all = db.fetch('SELECT * from Admin ')
+        if type(_all) == dict:
+            _all = [_all]
+        return [Admin(**info) for info in _all]
 
 #---------------------------------------helper func----------------------------------------
 def compute_hash(password, salt=None, pepper=None):
@@ -289,7 +396,7 @@ def reset_database(database='database.db'):
 
 class Connection(sqlite3.Connection):
     def __init__(self, database='database.db', **kargs):
-        super().__init__(database, **kargs)
+        super().__init__(database, detect_types=sqlite3.PARSE_DECLTYPES, **kargs)
         self.cur = self.cursor()
 
     def __enter__(self):
