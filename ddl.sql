@@ -1,12 +1,12 @@
 CREATE TABLE IF NOT EXISTS login (
-	user_id INTEGER PRIMARY KEY,
+	user_id INTEGER PRIMARY KEY AUTOINCREMENT,
 	username VARCHAR(32) UNIQUE NOT NULL,
 	hashedpwd BYTE(64) NOT NULL,
 	salt VARCHAR(8,16) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS users (
-	user_id INTEGER,
+	user_id INTEGER PRIMARY KEY,
 	medicare_id VARCHAR UNIQUE,
   FOREIGN KEY (user_id) REFERENCES login(user_id)
 );
@@ -23,8 +23,8 @@ CREATE TABLE IF NOT EXISTS admin (
 	FOREIGN KEY(user_id) REFERENCES login(user_id)
 );
 
-CREATE TABLE IF NOT EXISTS medical_history (
-	history_id INTEGER PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS medical_record (
+	record_id INTEGER PRIMARY KEY AUTOINCREMENT,
 	created_at VARCHAR DEFAULT (date('now')),
 	user_id INTEGER NOT NULL,
 	summary VARCHAR,
@@ -34,8 +34,8 @@ CREATE TABLE IF NOT EXISTS medical_history (
 	FOREIGN KEY (recorded_by) REFERENCES medical_professionals(user_id)
 );
 
-CREATE TABLE IF NOT EXISTS presciptions (
-	presciption_id INTEGER PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS prescriptions (
+	prescription_id INTEGER PRIMARY KEY AUTOINCREMENT,
 	user_id INTEGER NOT NULL,
 	date_prescribed VARCHAR DEFAULT (date('now')),
 	medication VARCHAR,
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS presciptions (
 );
 
 CREATE TABLE IF NOT EXISTS rebate_requests (
-	request_id INTEGER PRIMARY KEY,
+	request_id INTEGER PRIMARY KEY AUTOINCREMENT,
 	user_id INTEGER NOT NULL,
 	amount INTEGER DEFAULT 0,
 	reason VARCHAR NOT NULL,
