@@ -1,5 +1,6 @@
 import Database as db
 import sqlite3
+import datetime
 from unittest import main, TestCase
 from collections import namedtuple
 from itertools import starmap
@@ -64,7 +65,7 @@ class TestUser(TestCase):
             user.update_data()
             self.assertEqual(med_id, db.User(*login).medicare_id)
 
-    def test_record(self):
+    def test_appointments(self):
         pass
 
     def test_request(self):
@@ -117,21 +118,25 @@ class TestProfessional(TestCase):
         expected = [db.MedicalProfessional(*login).user_id for login in self.login]
         self.assertListEqual(expected, [user.user_id for user in db.MedicalProfessional.get_all()])
 
-    def test_medical_record(self):
+    def test_appointments(self):
         doc = db.MedicalProfessional(*self.login[0])
         patient = db.User(*self.login[1])
 
-        self.assertFalse(patient.get_record())
+        self.assertFalse(patient.get_appointments())
 
-        exp_record = {'summary':'heart failure', 'details':'Ni'*sum(ord(ch) for ch in 'Ni')}
-        doc.append_record(patient, **exp_record)
-        record = patient.get_record()[0]
+        exp_appointment = {
+            'info':'colonoscopy',
+            'date':datetime.date(2018,9,23),
+            'time':datetime.time(13, 30)
+        }
+        doc.make_appointment(patient, **exp_appointment)
+        appointment = patient.get_appointments()[0]
 
-        self.assertEqual(exp_record['summary'], record.summary)
-        self.assertEqual(exp_record['details'], record.details)
-        self.assertEqual(doc.user_id, record.recorded_by)
-        self.assertEqual(patient.user_id, record.user_id)
-        self.assertIsNotNone(record.created_at)
+        self.assertEqual(exp_appointment['info'], appointment.info)
+        self.assertEqual(exp_appointment['date'], appointment.date)
+        self.assertEqual(exp_appointment['time'], appointment.time)
+        self.assertEqual(doc.user_id, appointment.doctor_id)
+        self.assertEqual(patient.user_id, appointment.user_id)
 
     def test_prescription(self):
         doc = db.MedicalProfessional(*self.login[0])
