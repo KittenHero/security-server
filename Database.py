@@ -59,6 +59,9 @@ class Login(object):
             db.execute('''
             UPDATE login SET
             username = :username,
+            given_name = :given_name,
+            family_name = :family_name,
+            dob = :dob,
             hashedpwd = :hashedpwd
             WHERE user_id = :user_id
             ''', **self.__dict__)
@@ -103,6 +106,7 @@ class User(Login):
         '''
         Stores medicare_id of current user into database
         '''
+        super().update_login()
         with Connection() as db:
             db.execute('''
             UPDATE users
@@ -382,6 +386,9 @@ class Staff(Login):
         request.date_processed = dt.date.today().strftime('%y-%m-%d')
         request.update()
 
+    def update(self):
+        super().update_login()
+
     @classmethod
     def register(cls, username, password):
         user_id = super().register(username, password)
@@ -415,6 +422,9 @@ class Admin(Login):
                 is_valid = db.fetch('SELECT (?) in Admin', self.user_id)
             if not is_valid:
                 raise LookupError('{} not registered as Admin' % username)
+
+    def update(self):
+        super().update_login()
 
     @classmethod
     def register(cls, username, password):

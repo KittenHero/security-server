@@ -1,6 +1,9 @@
 CREATE TABLE IF NOT EXISTS login (
 	user_id INTEGER PRIMARY KEY AUTOINCREMENT,
 	username VARCHAR(32) UNIQUE NOT NULL,
+	given_name VARCHAR,
+	family_name VARCHAR,
+	dob DATE,
 	hashedpwd BYTE(64) NOT NULL,
 	salt VARCHAR(8,16) NOT NULL
 );

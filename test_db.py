@@ -25,13 +25,24 @@ class TestLogin(TestCase):
     def test_update(self):
         user = db.Login(*self.login)
         self.__class__.login = logintuple('sarah', 'salt')
+        dob = datetime.date(1950, 2, 20)
+
         user.username = self.login.user
+        user.given_name = self.login.user
+        user.family_name = self.login.pwd
+        user.dob = dob
+
         user.update_login(self.login.pwd)
 
         self.assertTrue(user.verify_password(self.login.pwd))
+        self.assertEqual(self.login.user, user.given_name)
+        self.assertEqual(self.login.pwd, user.family_name)
+        self.assertEqual(dob, user.dob)
+
         relogin = db.Login(*self.login)
         self.assertEqual(self.user_id, relogin.user_id)
 
+    def test_already_registered(self):
         self.assertRaises(sqlite3.IntegrityError ,db.User.register, self.login.user, self.login.pwd)
 
     def test_assignment(self):
