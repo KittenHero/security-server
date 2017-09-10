@@ -5,7 +5,7 @@ import sqlite3
 import os
 import traceback as tb
 from string import hexdigits, printable
-
+import datetime as  dt
 #-------------------------------------core functions-----------------------------------
 class Login(object):
     '''
@@ -116,20 +116,20 @@ class User(Login):
         '''
         with Connection() as db:
             pres = db.fetch('SELECT * from prescriptions WHERE user_id = (?)', self.user_id)
-        if type(pres) == dict:
+        if type(pres) is dict:
             pres = [pres]
         return [Prescription(**info) for info in pres]
 
 
-    def get_record(self):
+    def get_appointments(self):
         '''
-        Fetch a list of all medical records belonging to the user.
+        Fetch a list of all appointments belonging to the user.
         '''
         with Connection() as db:
-            res = db.fetch('SELECT * from medical_record WHERE user_id = (?)', self.user_id)
-        if type(res) == dict:
+            res = db.fetch('SELECT * from appointments WHERE user_id = (?)', self.user_id)
+        if type(res) is dict:
             res = [res]
-        return [MedicalRecord(**info) for info in res]
+        return [Appointment(**info) for info in res]
 
     def get_requests(self):
         '''
@@ -137,7 +137,7 @@ class User(Login):
         '''
         with Connection() as db:
             requests = db.fetch('SELECT * from rebate_requests WHERE user_id = (?)', self.user_id)
-        if type(requests) == dict:
+        if type(requests) is dict:
             requests = [requests]
         return [RebateRequest(**info) for info in requests]
 
@@ -169,7 +169,7 @@ class User(Login):
     def get_all():
         with Connection() as db:
             _all = db.fetch('SELECT * from users JOIN login USING (user_id)')
-        if type(_all) == dict:
+        if type(_all) is dict:
             _all = [_all]
         return [User(**info) for info in _all]
 
@@ -178,6 +178,7 @@ class User(Login):
         with Connection() as db:
             data = db.fetch('''
             SELECT * from users
+            JOIN login USING (user_id)
             WHERE user_id = (?)
             ''', user_id)
         return User(**data)
@@ -206,17 +207,17 @@ class MedicalProfessional(User):
             if not is_valid:
                 raise LookupError('{} not registered as Medical_Professionals' % username)
 
-    def append_record(self, user, summary, details):
+    def make_appointment(self, user, info, date, time):
         '''
-        Add a record to a patient's medical record.
+        Add an appointment to a patient's medical record.
         '''
         with Connection() as db:
             db.execute('''
-                INSERT INTO medical_record
-                (user_id, summary, details, recorded_by)
-                VALUES (?, ?, ?, ?)
-                ''', user.user_id, summary, details, self.user_id)
-            _id = db.fetch('SELECT MAX(record_id) as id FROM medical_record')['id']
+                INSERT INTO appointments
+                (user_id, info, date, time, doctor_id)
+                VALUES (?, ?, ?, ?, ?)
+                ''', user.user_id, info, date, time, self.user_id)
+            _id = db.fetch('SELECT MAX(appointment_id) as id FROM appointments')['id']
         return _id
 
 
@@ -254,6 +255,8 @@ class MedicalProfessional(User):
         with Connection() as db:
             data = db.fetch('''
             SELECT * from medical_professionals
+            JOIN login USING (user_id)
+            JOIN users USING (user_id)
             WHERE user_id = (?)
             ''', user_id)
         return MedicalProfessional(**data)
@@ -266,7 +269,7 @@ class MedicalProfessional(User):
             JOIN users USING (user_id)
             JOIN login USING (user_id)
             ''')
-        if type(_all) == dict:
+        if type(_all) is dict:
             _all = [_all]
         return [MedicalProfessional(**info) for info in _all]
 
@@ -294,44 +297,75 @@ class RebateRequest(object):
     def get_all():
         with Connection() as db:
             _all = db.fetch('SELECT * from rebate_requests')
-        if type(_all) == dict:
+        if type(_all) is dict:
             _all = [_all]
         return [RebateRequest(**info) for info in _all]
 
-class MedicalRecord:
+    @staticmethod
+    def get_unprocessed():
+        with Connection() as db:
+            _all = db.fetch('SELECT * from rebate_requests WHERE approved = NULL')
+        if type(_all) is dict:
+            _all = [_all]
+        return [RebateRequest(**info) for info in _all]
+
+class Appointment:
     def __init__(self, **kargs):
         self.__dict__.update(kargs)
 
     def update(self):
         with Connection() as db:
             db.execute('''
-                UPDATE medical_record SET
-                summary = :summary,
-                details = :details
-                WHERE record_id = :record_id
+                UPDATE appointments SET
+                info = :info,
+                date = :date
+                time = :time
+                WHERE appointment_id = :appointment_id
                 ''', **self.__dict__)
 
     def delete(self):
         with Connection() as db:
-            db.execute('DELETE FROM medical_record WHERE record_id = (?)', self.record_id)
+            db.execute('DELETE FROM appointments WHERE appointment_id = (?)', self.appointment_id)
 
     @staticmethod
     def get_all():
-        pass
+        with Connection() as db:
+            _all = db.fetch('SELECT * from appointments')
+        if type(_all) is dict:
+            _all = [_all]
+        return [Appointment(**info) for info in _all]
 
 class Prescription:
     def __init__(self, **kargs):
         self.__dict__.update(kargs)
 
     def update(self):
-        pass
+        with Connection() as db:
+            db.execute('''
+                UPDATE prescriptions SET
+                {0} = :{0}, {1} = :{1},
+                {2} = :{2}, {3} = :{3}
+                WHERE {4} = :{4}
+                '''.format(
+                    'medication', 'dosage'
+                    'frequency','time',
+                    'prescription_id'
+                ), **self.__dict__)
 
     def delete(self):
-        pass
+        with Connection() as db:
+            db.execute('''
+                DELETE FROM prescriptions 
+                WHERE prescription_id = (?)
+                ''', self.prescription_id )
 
     @staticmethod
     def get_all():
-        pass
+        with Connection() as db:
+            _all = db.fetch('SELECT * from prescriptions')
+        if type(_all) is dict:
+            _all = [_all]
+        return [Prescription(**info) for info in _all]
 
 class Staff(Login):
     def __init__(self, username=None, password=None, **kargs):
@@ -343,16 +377,35 @@ class Staff(Login):
                 raise LookupError('{} not registered as Staff' % username)
 
     def process_requests(self, request, approved):
-        pass
+        request.approved = approved
+        request.processed_by = self.user_id
+        request.date_processed = dt.date.today().strftime('%y-%m-%d')
+        request.update()
 
     @classmethod
     def register(cls, username, password):
         user_id = super().register(username, password)
-        pass
+        with Connection() as db:
+            db.execute('INSERT INTO Staff VALUES (?)', user_id)
+        return user_id
 
     @staticmethod
     def get_all():
-        pass
+        with Connection() as db:
+            _all = db.fetch('SELECT * from Staff')
+        if type(_all) is dict:
+            _all = [_all]
+        return [Staff(**info) for info in _all]
+
+    @staticmethod
+    def with_id(user_id):
+        with Connection() as db:
+            data = db.fetch('''
+            SELECT * from staff
+            JOIN login USING (user_id)
+            WHERE user_id = (?)
+            ''', user_id)
+        return Staff(**data)
 
 class Admin(Login):
     def __init__(self, username=None, password=None, **kargs):
@@ -366,16 +419,27 @@ class Admin(Login):
     @classmethod
     def register(cls, username, password):
         user_id = super().register(username, password)
-        pass
+        with Connection() as db:
+            db.execute('INSERT INTO Admin VALUES (?)', user_id)
+        return user_id
 
     @staticmethod
     def get_all():
         with Connection() as db:
-            _all = db.fetch('SELECT * from Admin ')
-        if type(_all) == dict:
+            _all = db.fetch('SELECT * from Admin')
+        if type(_all) is dict:
             _all = [_all]
         return [Admin(**info) for info in _all]
 
+    @staticmethod
+    def with_id(user_id):
+        with Connection() as db:
+            data = db.fetch('''
+            SELECT * from admin
+            JOIN login USING (user_id)
+            WHERE user_id = (?)
+            ''', user_id)
+        return Admin(**data)
 #---------------------------------------helper func----------------------------------------
 def compute_hash(password, salt=None, pepper=None):
     if salt is None:
@@ -396,7 +460,9 @@ def reset_database(database='database.db'):
 
 class Connection(sqlite3.Connection):
     def __init__(self, database='database.db', **kargs):
-        super().__init__(database, detect_types=sqlite3.PARSE_DECLTYPES, **kargs)
+        if 'detect_types' not in kargs:
+            kargs['detect_types'] = sqlite3.PARSE_DECLTYPES
+        super().__init__(database, **kargs)
         self.cur = self.cursor()
 
     def __enter__(self):
@@ -428,4 +494,7 @@ class Connection(sqlite3.Connection):
                               for row in self.cur.fetchall()]
         return results if len(results) != 1 else results[0]
 
+sqlite3.register_converter('TIME', lambda s: dt.datetime.strptime(s.decode(),'%H:%M').time())
+sqlite3.register_adapter(dt.time, lambda t: t.strftime('%H:%M'))
+sqlite3.register_adapter(dt.date, lambda d: d.strftime('%Y-%m-%d'))
 database_setup()
