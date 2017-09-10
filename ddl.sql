@@ -23,15 +23,15 @@ CREATE TABLE IF NOT EXISTS admin (
 	FOREIGN KEY(user_id) REFERENCES login(user_id)
 );
 
-CREATE TABLE IF NOT EXISTS medical_record (
-	record_id INTEGER PRIMARY KEY AUTOINCREMENT,
-	created_at VARCHAR DEFAULT (date('now')),
+CREATE TABLE IF NOT EXISTS appointments (
+	appointment_id INTEGER PRIMARY KEY AUTOINCREMENT,
 	user_id INTEGER NOT NULL,
-	summary VARCHAR,
-	details VARCHAR,
-	recorded_by INTEGER NOT NULL,
+	date DATE,
+	time TIME,
+	info VARCHAR,
+	doctor_id INTEGER NOT NULL,
 	FOREIGN KEY (user_id) REFERENCES users(user_id),
-	FOREIGN KEY (recorded_by) REFERENCES medical_professionals(user_id)
+	FOREIGN KEY (doctor_id) REFERENCES medical_professionals(user_id)
 );
 
 CREATE TABLE IF NOT EXISTS prescriptions (
