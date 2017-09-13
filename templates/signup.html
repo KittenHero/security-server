@@ -1,9 +1,14 @@
 % setdefault('messages', None)
 % setdefault('user', None)
 % include('top.html', messages=messages, user=user)
+<div class="logreg">
 	<form method="POST" action="/signup">
-		<input type="text" name="user" placeholder="user" required>
-		<input type="password" name="password" placeholder="Password" required>
-		<button type="submit">submit</button>
+		<fieldset>
+			<legend>Sign up</legend>
+			<input type="text" name="user" placeholder="Username" required>
+			<input type="password" name="password" placeholder="Password" required>
+			<button type="submit">submit</button>
+		</fieldset>
 	</form>
+</div>
 % include('bottom.html')

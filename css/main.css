@@ -1,0 +1,67 @@
+body{
+    background: url('../img/4.jpg') no-repeat center center fixed;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover
+}
+
+ul {
+    overflow: hidden;
+    background-color: inherit;
+    opacity: 0.6;
+}
+
+li {
+    float: left;
+}
+
+li a{
+    display: block;
+    padding: 8px;
+    text-align: center;
+}
+
+li a:hover{
+    background-color: #dddeff
+}
+
+form{
+    display: block;
+}
+
+input{
+    width: 100%;
+    border: 2px;
+    border-color: inherit;
+    border-radius: 4px;
+    padding: 10px;
+    margin: 6px;
+    text-align: center;
+    box-sizing: border-box;
+    -webkit-transition: width 0.4s ease-in-out;
+    transition: width 0.4s ease-in-out;
+}
+
+input:focus{
+    width: 100%;
+    border: 3px solid #555;
+    background: lightblue;
+}
+
+.logreg{
+    position: absolute;
+    width: 300px;
+    height: 200px;
+    z-index: 15;
+    top: 50%;
+    left: 50%;
+    margin: -100px 0 0 -150px;
+    background: inherit;
+    text-align: center;
+}
+
+button{
+    width: 120px;
+    height: 20px;
+}

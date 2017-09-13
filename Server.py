@@ -3,6 +3,7 @@ from bottle import request, response
 from bottle import run
 from bottle import template
 from bottle import TEMPLATE_PATH
+from bottle import static_file
 import Database
 import secrets
 from string import printable

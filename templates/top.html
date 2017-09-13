@@ -1,22 +1,27 @@
 <!DOCTYPE html>
 <html>
 	<head>
-
+		<link rel="stylesheet" type="text/css" href="/css/reset.css"/>
+		<link rel="stylesheet" type="text/css" href="/css/main.css"/>
 	</head>
 	<body>
 		<header>
 
 		</header>
-		<nav>
-			<a href='/index'>Home</a>
-			% if user:
-			<a href='/logout'>Log out</a>
-			% else:
-			<a href='/login'>Log in</a>
-			<a href='/signup'>Create an account</a>
-			% end
-		</nav>
-		
+		<div id="topnav">
+			<nav>
+				<ul>
+					<li><a href='/index'>Home</a></li>
+					% if user:
+					<li><a href='/logout'>Log out</a></li>
+					% else:
+					<li><a href='/login'>Log in</a></li>
+					<li><a href='/signup'>Create an account</a></li>
+					% end
+				</ul>
+			</nav>
+		</div>
+
 		% if messages:
 		<p>{{ messages }}</p>
 		% end
