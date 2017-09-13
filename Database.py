@@ -72,7 +72,7 @@ class Login(object):
         super().__setattr__(name, value)
 
     @classmethod
-    def register(cls, username, password):
+    def register(cls, username, fname, lname, dob, password):
         '''
         Creates new login in the database.
         returns id of the new user
@@ -81,8 +81,8 @@ class Login(object):
         '''
         with Connection() as db:
             db.execute(
-                'INSERT INTO login(username, hashedpwd, salt) VALUES (?, ?, ?)',
-                username, *compute_hash(password)
+                'INSERT INTO login(username, given_name, family_name, dob, hashedpwd, salt) VALUES (?, ?, ?, ?, ?, ?)',
+                username, fname, lname, dob, *compute_hash(password)
             )
             _id = db.fetch('SELECT user_id FROM login WHERE username = (?)', username)['user_id']
         return _id
@@ -160,11 +160,11 @@ class User(Login):
         return _id
 
     @classmethod
-    def register(cls, username, password):
+    def register(cls, username, fname, lname, dob, password):
         '''
         Register a new user in the database.
         '''
-        user_id = super().register(username, password)
+        user_id = super().register(username, fname, lname, dob, password)
         with Connection() as db:
             db.execute('INSERT INTO users(user_id) VALUES (?)', user_id)
         return user_id
@@ -242,8 +242,8 @@ class MedicalProfessional(User):
         return _id
 
     @classmethod
-    def register(cls, username, password):
-        user_id = super().register(username, password)
+    def register(cls, username, fname, lname, dob, password):
+        user_id = super().register(username, fname, lname, dob, password)
         cls.register_existing(user_id)
 
     @classmethod
@@ -359,7 +359,7 @@ class Prescription:
     def delete(self):
         with Connection() as db:
             db.execute('''
-                DELETE FROM prescriptions 
+                DELETE FROM prescriptions
                 WHERE prescription_id = (?)
                 ''', self.prescription_id )
 
@@ -390,8 +390,8 @@ class Staff(Login):
         super().update_login()
 
     @classmethod
-    def register(cls, username, password):
-        user_id = super().register(username, password)
+    def register(cls, username, fname, lname, dob, password):
+        user_id = super().register(username, fname, lname, dob, password)
         with Connection() as db:
             db.execute('INSERT INTO Staff VALUES (?)', user_id)
         return user_id
@@ -427,8 +427,8 @@ class Admin(Login):
         super().update_login()
 
     @classmethod
-    def register(cls, username, password):
-        user_id = super().register(username, password)
+    def register(cls, username, fname, lname, dob, password):
+        user_id = super().register(username, fname, lname, dob, password)
         with Connection() as db:
             db.execute('INSERT INTO Admin VALUES (?)', user_id)
         return user_id
