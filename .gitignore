@@ -102,3 +102,4 @@ ENV/
 *.db
 .idea/
 *.swp
+.DS_Store
