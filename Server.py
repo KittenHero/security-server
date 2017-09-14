@@ -59,7 +59,7 @@ def signup_general():
         uid = Database.User.register(request.forms['user'], request.forms['password'])
     except sqlite3.IntegrityError as e:
         return template('signup_general.html', messages='Username already in use')
-    user = Database.Use.with_id(uid)
+    user = Database.User.with_id(uid)
     user.given_name = request.forms['fname']
     user.family_name = request.forms['lname']
     user.dob = request.forms['dob'],

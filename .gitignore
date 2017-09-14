@@ -102,4 +102,4 @@ ENV/
 *.db
 .idea/
 *.swp
-templates/signup.html
+.DS_Store
