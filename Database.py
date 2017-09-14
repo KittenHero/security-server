@@ -26,6 +26,7 @@ class Login(object):
         '''
         if kargs:
             self.__dict__.update(kargs)
+            self.username = username
             return
         with Connection() as db:
             user = db.fetch('SELECT * FROM login WHERE username = (?)', username)
@@ -102,7 +103,7 @@ class User(Login):
                 else:
                     self.__dict__.update(data)
 
-    def update_data(self):
+    def update(self):
         '''
         Stores medicare_id of current user into database
         '''

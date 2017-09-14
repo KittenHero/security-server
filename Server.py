@@ -48,7 +48,12 @@ def signup_forms():
 @route('/signup', method='POST')
 def signup():
     try:
-        Database.User.register(request.forms['user'], request.forms['password'])
+        u_id = Database.User.register(request.forms['user'], request.forms['password'])
+        user = Database.User.with_id(u_id)
+        user.given_name = request.forms['fname']
+        user.family_name = request.forms['lname']
+        user.dob = request.forms['dob']
+        user.update()
     except Exception as e:
         return template('signup.html', messages=e)
     return redirect('/login')
