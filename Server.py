@@ -18,7 +18,6 @@ def index():
     if not user:
         return redirect('/login')
     else:
-        print(user.hashedpwd)
         return template('index.html', user=user)
 
 @route('/login', method='GET')

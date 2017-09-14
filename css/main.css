@@ -1,9 +1,21 @@
 body{
     background: url('../img/4.jpg') no-repeat center center fixed;
+    opacity: 0.7;
     -webkit-background-size: cover;
     -moz-background-size: cover;
     -o-background-size: cover;
     background-size: cover
+}
+
+table, th, td{
+    width: 100%;
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+
+th, td{
+    padding: 10px;
+    text-align: center;
 }
 
 div #topnav{
