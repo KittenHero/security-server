@@ -1,0 +1,14 @@
+
+% setdefault('messages', None)
+% setdefault('user', None)
+% include('top.html', messages=messages, user=user)
+	% if app:
+		<table>
+			% for a in app:
+				<p>{{a}}</p>
+			% end
+		</table>
+	% else:
+		<p>You have no appointments</p>
+	% end
+% include('bottom.html')

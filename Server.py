@@ -62,7 +62,7 @@ def signup_general():
     user = Database.User.with_id(uid)
     user.given_name = request.forms['fname']
     user.family_name = request.forms['lname']
-    user.dob = request.forms['dob'],
+    user.dob = request.forms['dob']
     user.update()
     return redirect('/login')
 
@@ -85,7 +85,7 @@ def view_appointments():
     if not user:
         return redirect('/login')
     else:
-        return template('appointments.html', user=user.__dict__)
+        return template('appointments.html', user=user.__dict__, app=user.get_appointments())
 
 
 @route('/logout', method=['GET', 'POST'])
