@@ -4,9 +4,22 @@
 % include('top.html', messages=messages, user=user)
 	% if app:
 		<table>
+			<thead>
+				<tr>
+					<th>Date</th>
+					<th>Time</th>
+					<th>info</th>
+				</tr>
+			</thead>
+			<tbody>
 			% for a in app:
-				<p>{{a}}</p>
+				<tr>
+					<td>{{a.date}}</td>
+					<td>{{a.time}}</td>
+					<td>{{a.info}}</td>
+				</tr>
 			% end
+			</tbody>
 		</table>
 	% else:
 		<p>You have no appointments</p>

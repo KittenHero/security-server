@@ -8,6 +8,7 @@ import Database
 import secrets
 import sqlite3
 from string import printable
+from contextlib import suppress
 secret = ''.join([secrets.choice(printable) for _ in range(16)])
 #------------------------------main logic---------------------------
 @route('/')
@@ -18,7 +19,7 @@ def index():
         return redirect('/login')
     else:
         print(user.hashedpwd)
-        return template('index.html', user=user.__dict__)
+        return template('index.html', user=user)
 
 @route('/login', method='GET')
 def login_form():
@@ -29,16 +30,18 @@ def login_form():
 
 @route('/login', method='POST')
 def login():
+    for user_class in [Database.User, Database.MedicalProfessional]:
+        with suppress(LookupError, ValueError):
+            user = user_class(request.forms['user'], request.forms['password'])
     try:
-        user = Database.User(request.forms['user'], request.forms['password'])
-    except Exception as e:
-        return template('login.html', messages=e)
-    response.set_cookie(
-        'logged_in',
-        user,
-        max_age=600,
-        secret=secret
-    )
+        response.set_cookie(
+            'logged_in',
+            user,
+            max_age=600,
+            secret=secret
+        )
+    except UnboundLocalError:
+        return template('login.html', messages='Incorrect username or password')
     return redirect('/index')
 
 @route('/signup_general', method='GET')
@@ -75,7 +78,7 @@ def signup_professional():
     user = Database.MedicalProfessional.with_id(uid)
     user.given_name = request.forms['fname']
     user.family_name = request.forms['lname']
-    user.dob = request.forms['dob'],
+    user.dob = request.forms['dob']
     user.update()
     return redirect('/login')
 
@@ -85,8 +88,27 @@ def view_appointments():
     if not user:
         return redirect('/login')
     else:
-        return template('appointments.html', user=user.__dict__, app=user.get_appointments())
+        return template('appointments.html', user=user, app=user.get_appointments())
 
+@route('/make_appointment', method='GET')
+def appointment_form():
+    user = request.get_cookie('logged_in', secret=secret)
+    return template('make_appointment.html', user=user, userlist=Database.User.get_all())
+
+@route('/make_appointment/<user_id>', method='POST')
+def make_apointment(user_id):
+    user = request.get_cookie('logged_in', secret=secret)
+
+    if not isinstance(user, Database.MedicalProfessional):
+        return redirect('/index')
+
+    user.make_appointment(
+            Database.User.with_id(user_id),
+            info = request.forms['info'],
+            date = request.forms['date'],
+            time = request.forms['time']
+    )
+    return template('make_appointment.html', user=user, userlist=Database.User.get_all(), messages='Appointment Successfully created')
 
 @route('/logout', method=['GET', 'POST'])
 def logout():

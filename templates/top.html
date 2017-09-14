@@ -14,8 +14,11 @@
 					<li><a href='/index'>Home</a></li>
 					% if user:
 					<li><a href='/logout'>Log out</a></li>
-					
+					% if type(user).__name__ == 'User':
 					<li><a href='/appointments'>Appointments</a></li>
+					% elif type(user).__name__ == 'MedicalProfessional':
+					<li><a href='/make_appointment'>Make Appointments</a></li>
+					% end
 					% else:
 					<li><a href='/login'>Log in</a></li>
 					<li><a href='/signup_general'>Sign up</a></li>

@@ -246,6 +246,7 @@ class MedicalProfessional(User):
     def register(cls, username, password):
         user_id = super().register(username, password)
         cls.register_existing(user_id)
+        return user_id
 
     @classmethod
     def register_existing(cls, user_id):

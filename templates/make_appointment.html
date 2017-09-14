@@ -1,0 +1,31 @@
+% setdefault('messages', None)
+% setdefault('user', None)
+% include('top.html', messages=messages, user=user)
+	<table>
+		<thead>
+			<tr>
+				<th>Medicare No.</th>
+				<th>Given Name</th>
+				<th>Family Name</th>
+				<th>Date of Birth</th>
+			</tr>
+		</thead>
+		<tbody>
+		% for user in userlist:
+		<tr>
+			<td>{{user.medicare_id}}</td>
+			<td>{{user.given_name}}</td>
+			<td>{{user.family_name}}</td>
+			<td>{{user.dob}}</td>
+			<td>
+				<form method="POST" action="/make_appointment/{{user.user_id}}">
+					<input type="Date" name="date" required>
+					<input type="Time" name="time" required>
+					<input type="text" name="info" placeholder="info">
+					<button type="submit">make appointment</button>
+				</form>
+			</td>
+		</tr>
+		% end
+		</tbody>
+% include('bottom.html')
