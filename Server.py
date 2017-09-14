@@ -17,6 +17,7 @@ def index():
     if not user:
         return redirect('/login')
     else:
+        print(user.hashedpwd)
         return template('index.html', user=user.__dict__)
 
 @route('/login', method='GET')
@@ -40,26 +41,42 @@ def login():
     )
     return redirect('/index')
 
-@route('/signup', method='GET')
-def signup_forms():
+@route('/signup_general', method='GET')
+def signup_forms_1():
     if request.get_cookie('logged_in', secret=secret):
         return redirect('/index')
-    else: return template('signup.html')
+    else: return template('signup_general.html')
 
-@route('/signup', method='POST')
-def signup():
+@route('/signup_professional', method='GET')
+def signup_forms_2():
+    if request.get_cookie('logged_in', secret=secret):
+        return redirect('/index')
+    else: return template('signup_professional.html')
+
+@route('/signup_general', method='POST')
+def signup_general():
     try:
-        u_id = Database.User.register(request.forms['user'], request.forms['password'])
-    except sqlite3.IntegrityError as e:
-        return template('signup.html', messages='Username taken')
-
-    user = Database.User.with_id(u_id)
-    user.given_name = request.forms['fname']
-    user.family_name = request.forms['lname']
-    user.dob = request.forms['dob']
-    user.update()
-
+        Database.User.register(request.forms['user'], request.forms['fname'], request.forms['lname'], request.forms['dob'], request.forms['password'])
+    except Exception as e:
+        return template('signup_general.html', messages=e)
     return redirect('/login')
+
+@route('/signup_professional', method='POST')
+def signup_professional():
+    try:
+        Database.MedicalProfessional.register(request.forms['user'], request.forms['fname'], request.forms['lname'], request.forms['dob'], request.forms['password'])
+    except Exception as e:
+        return template('signup_professional', messages=e)
+    return redirect('/login')
+
+@route('/appointments', method='GET')
+def view_appointments():
+    user = request.get_cookie('logged_in', secret=secret)
+    if not user:
+        return redirect('/login')
+    else:
+        return template('appointments.html', user=user.__dict__)
+
 
 @route('/logout', method=['GET', 'POST'])
 def logout():
