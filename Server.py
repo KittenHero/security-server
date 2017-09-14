@@ -56,17 +56,27 @@ def signup_forms_2():
 @route('/signup_general', method='POST')
 def signup_general():
     try:
-        Database.User.register(request.forms['user'], request.forms['fname'], request.forms['lname'], request.forms['dob'], request.forms['password'])
-    except Exception as e:
-        return template('signup_general.html', messages=e)
+        uid = Database.User.register(request.forms['user'], request.forms['password'])
+    except sqlite3.IntegrityError as e:
+        return template('signup_general.html', messages='Username already in use')
+    user = Database.Use.with_id(uid)
+    user.given_name = request.forms['fname']
+    user.family_name = request.forms['lname']
+    user.dob = request.forms['dob'],
+    user.update()
     return redirect('/login')
 
 @route('/signup_professional', method='POST')
 def signup_professional():
     try:
-        Database.MedicalProfessional.register(request.forms['user'], request.forms['fname'], request.forms['lname'], request.forms['dob'], request.forms['password'])
-    except Exception as e:
-        return template('signup_professional', messages=e)
+        uid = Database.MedicalProfessional.register(request.forms['user'], request.forms['password'])
+    except sqlite3.IntegrityError as e:
+        return template('signup_professional', messages='Username already in use')
+    user = Database.MedicalProfessional.with_id(uid)
+    user.given_name = request.forms['fname']
+    user.family_name = request.forms['lname']
+    user.dob = request.forms['dob'],
+    user.update()
     return redirect('/login')
 
 @route('/appointments', method='GET')
