@@ -95,7 +95,7 @@ def appointment_form():
     user = request.get_cookie('logged_in', secret=secret)
     return template('make_appointment.html', user=user, userlist=Database.User.get_all())
 
-@route('/make_appointment/<user_id>', method='POST')
+@route('/make_appointment/<user_id:int>', method='POST')
 def make_apointment(user_id):
     user = request.get_cookie('logged_in', secret=secret)
 
