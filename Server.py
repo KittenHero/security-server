@@ -6,6 +6,7 @@ from bottle import TEMPLATE_PATH
 from bottle import static_file
 import Database
 import secrets
+import sqlite3
 from string import printable
 secret = ''.join([secrets.choice(printable) for _ in range(16)])
 #------------------------------main logic---------------------------
@@ -48,9 +49,16 @@ def signup_forms():
 @route('/signup', method='POST')
 def signup():
     try:
-        Database.User.register(request.forms['user'], request.forms['fname'], request.forms['lname'], request.forms['dob'], request.forms['password'])
-    except Exception as e:
-        return template('signup.html', messages=e)
+        u_id = Database.User.register(request.forms['user'], request.forms['password'])
+    except sqlite3.IntegrityError as e:
+        return template('signup.html', messages='Username taken')
+
+    user = Database.User.with_id(u_id)
+    user.given_name = request.forms['fname']
+    user.family_name = request.forms['lname']
+    user.dob = request.forms['dob']
+    user.update()
+
     return redirect('/login')
 
 @route('/logout', method=['GET', 'POST'])
