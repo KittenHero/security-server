@@ -1,12 +1,15 @@
 import Crypto.Hash.SHA512 as SHA512
-import secrets
-import random
+#import secrets
+import random as secrets
 import sqlite3
 import os
 import traceback as tb
 from string import hexdigits, printable
 import datetime as  dt
+import io
+import fileinput
 #-------------------------------------core functions-----------------------------------
+
 class Login(object):
     '''
     Base class for Users, Staff and Admins
@@ -31,7 +34,7 @@ class Login(object):
         with Connection() as db:
             user = db.fetch('SELECT * FROM login WHERE username = (?)', username)
             if not user:
-                raise LookupError('{} not registed'.format(username))
+                raise LookupError('{} not registered'.format(username))
             self.__dict__.update(user)
 
             if not self.verify_password(password):
@@ -72,6 +75,10 @@ class Login(object):
             raise AttributeError('cannot change user_id')
         super().__setattr__(name, value)
 
+    # def test():
+    #     print("Hi")
+
+
     @classmethod
     def register(cls, username, password):
         '''
@@ -80,13 +87,80 @@ class Login(object):
 
         raises sqlite3.IntegrityError if username is taken
         '''
+        upper_case = {'A', 'B', 'C', 'D','E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'}
+        numbers = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
+
+        f = io.open('CommonPws.txt', 'r')
+        flag = 0
+
+        if len(password) < 8:
+            raise AttributeError('Password is too short')
+
+        if flag == 0:
+            if password.lower() == username.lower():
+                raise AttributeError('Do not use username as your password')
+            else:
+                flag = 0
+        if flag == 1:
+            for letter in password:
+                if letter in upper_case:
+                    flag = 2
+                elif letter in numbers:
+                    flag = 2
+            if flag is not 2:
+               # print(flag)
+                raise AttributeError('Password should have at least one upper_case and one number')
+        if flag == 2:
+            for line in f:
+                if password == line:
+                    raise AttributeError('Password is too common')
+                else:
+                    flag = 3
+
+        #test()
+        
+
+
         with Connection() as db:
             db.execute(
                 'INSERT INTO login(username, hashedpwd, salt) VALUES (?, ?, ?)',
                 username, *compute_hash(password)
             )
             _id = db.fetch('SELECT user_id FROM login WHERE username = (?)', username)['user_id']
-        return _id
+            return _id
+
+    #@classmethod
+    #def checkPasswordValid(username, password):
+        # upper_case = {'A', 'B', 'C', 'D','E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'}
+        # numbers = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
+
+        # f = io.open('CommonPws.txt', 'r')
+        # flag = 0
+        
+        # if flag == 0:
+        #     for letter in password:
+        #         if (letter in upper_case and letter in numbers):
+        #             flag = 1
+        #         else:
+        #             raise AttributeError('Password should contain at least one upper_case and one number')
+        # elif flag == 1:
+        #     for line in f:
+        #         if password == line:
+        #             raise AttributeError('Password is too common')
+        #         else:
+        #             flag = 2
+        # elif flag == 2:
+        #     if password == username:
+        #         raise AttributeError('Do not use username as your password')
+        #     else:
+        #         flag = 3
+
+        # return flag
+        # print('x')
+        # return 0
+        
+
+
 
 class User(Login):
     def __init__(self, username=None, password=None, **kargs):
@@ -455,7 +529,7 @@ class Admin(Login):
 #---------------------------------------helper func----------------------------------------
 def compute_hash(password, salt=None, pepper=None):
     if salt is None:
-        salt = ''.join([secrets.choice(printable) for _ in range(8 + secrets.randbelow(9))])
+        salt = ''.join([secrets.choice(printable) for _ in range(8 + secrets.randrange(0, 9))])
     if pepper is None:
         pepper = secrets.choice(hexdigits)
     return SHA512.new((salt + password + pepper).encode()).digest(), salt

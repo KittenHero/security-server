@@ -5,7 +5,7 @@ from bottle import template
 from bottle import TEMPLATE_PATH
 from bottle import static_file
 import Database
-import secrets
+import random as secrets
 import sqlite3
 from string import printable
 from contextlib import suppress
@@ -59,8 +59,10 @@ def signup_forms_2():
 def signup_general():
     try:
         uid = Database.User.register(request.forms['user'], request.forms['password'])
-    except sqlite3.IntegrityError as e:
+    except sqlite3.IntegrityError  as e:
         return template('signup_general.html', messages='Username already in use')
+    except AttributeError as e:
+        return template('signup_general.html', messages='Password needs to be 8 characters in length and have at least one uppercase and number')
     user = Database.User.with_id(uid)
     user.given_name = request.forms['fname']
     user.family_name = request.forms['lname']
