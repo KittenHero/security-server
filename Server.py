@@ -7,9 +7,10 @@ from bottle import static_file
 import config
 import secrets
 import requests
+import datetime as dt
 from string import printable
 from contextlib import suppress
-secret = ''.join([secrets.choice(printable) for _ in range(16)])
+sessions = {}
 database = f'http://{config.dbhost}:{config.dbport}/api'
 #------------------------------main logic---------------------------
 app = Bottle()
@@ -35,12 +36,9 @@ def login():
     r = requests.post(f'{database}/login', data=request.forms.dict)
     if 'user_id' not in r.cookies:
         return template('login.html', messages=r.text)
-
-    response.set_cookie(
-        'session_id', r.cookies['user_id'],
-        max_age=600,
-        secret=secret
-    )
+    sid = secrets.token_hex(4)
+    sessions[sid] = (r.cookies['user_id'], dt.datetime.now() + dt.timedelta(seconds=600))
+    response.set_cookie('session_id', sid, max_age=600)
     return redirect('/index')
 
 @app.route('/signup_general', method='GET')
@@ -105,14 +103,24 @@ def make_apointment():
 
 @app.route('/logout', method=['GET', 'POST'])
 def logout():
+    sid = request.get_cookie('session_id')
+    if sid in sessions:
+        del sessions[sid]
     response.delete_cookie('session_id')
     return redirect('/index')
 
 @app.hook('before_request')
 def get_user():
-    user_id = request.get_cookie('session_id', secret=secret)
-    if user_id is not None:
-        request.environ['user'] = requests.get(f'{database}/user/{user_id}').json()
+    sid = request.get_cookie('session_id')
+    if sid is not None and sid in sessions:
+        user_id, limit = sessions[sid]
+        if limit < dt.datetime.now():
+            request.environ['user'] = None
+        else:
+            request.environ['user'] = requests.get(f'{database}/user/{user_id}').json()
+            limit = dt.datetime.now() + dt.timedelta(seconds=600)
+            response.set_cookie('session_id', sid, max_age=600)
+            sessions[sid] = (user_id, limit)
     else:
         request.environ['user'] = None
 
