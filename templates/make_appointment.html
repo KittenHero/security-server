@@ -11,14 +11,14 @@
 			</tr>
 		</thead>
 		<tbody>
-		% for user in userlist:
+		% for u in userlist:
 		<tr>
-			<td>{{user.medicare_id}}</td>
-			<td>{{user.given_name}}</td>
-			<td>{{user.family_name}}</td>
-			<td>{{user.dob}}</td>
+			<td>{{u['medicare_id']}}</td>
+			<td>{{u['given_name']}}</td>
+			<td>{{u['family_name']}}</td>
+			<td>{{u['dob']}}</td>
 			<td>
-				<form method="POST" action="/make_appointment/{{user.user_id}}">
+				<form method="POST" action="/make_appointment?u={{user['username']}}&target={{u['username']}}">
 					<input type="Date" name="date" required>
 					<input type="Time" name="time" required>
 					<input type="text" name="info" placeholder="info">

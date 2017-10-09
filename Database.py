@@ -33,37 +33,62 @@ def find_login(*args, **kwargs):
 
 def user_type(user_id, user_type):
     with Connection() as db:
-        return db.fetch(f'''
+        return db.fetch(
+            f'''
             SELECT * FROM {user_type}
-            WHERE user_id = {user_id}''')
+            WHERE user_id = {user_id}
+            '''
+        )
+
+@app.route('/api/user', method='GET')
+def all_users():
+    with Connection(detect_types=0) as db:
+        _all = db.fetch('SELECT * from users JOIN login USING (user_id)')
+    if type(_all) is dict:
+        _all = [_all]
+    for user in _all:
+        del user['hashedpwd'], user['salt']
+    return {'all users': _all}
 
 @app.route('/api/user', method='PUT')
 def register_user():
-    newuser = request.forms.dict
-
-    newuser['username'] = newuser['user']
-    newuser['given_name'] = newuser['fname']
-    newuser['family_name'] = newuser['lname']
+    newuser = request.forms
     newuser['hashedpwd'], newuser['salt'] = compute_hash(request.forms['password'])
-
-    del newuser['user']
-    del newuser['fname']
-    del newuser['lname']
     del newuser['password']
-    del newuser['terms']
 
     with Connection() as db:
         try:
             db.execute(
                 f'''
                 INSERT INTO login ({", ".join(newuser)})
-                VALUES ({", ".join(f":{k}" for k in newuser)})
-                ''',
-                **newuser
+                VALUES ({", ".join(f":{k}" for k in newuser)});
+                ''', **newuser
+            )
+            db.execute(
+                f'''
+                INSERT INTO users (user_id)
+                SELECT user_id FROM login
+                WHERE {" AND ".join(f"{k} = :{k}" for k in newuser)}
+                ''', **newuser
             )
             return 'OK'
         except sqlite3.IntegrityError:
             return 'Username already in used'
+
+@app.route('/api/med', method='PUT')
+def register_med():
+    user = request.forms
+    del user['password']
+
+    with Connection() as db:
+            db.execute(
+                f'''
+                INSERT INTO medical_professionals (user_id)
+                SELECT user_id FROM login WHERE
+                {' AND '.join(f'{k} = :{k}' for k in user)}
+                ''', **user
+            )
+            return 'OK'
 
 @app.route('/api/user/<user_id:int>')
 def get_user(user_id):
@@ -72,8 +97,7 @@ def get_user(user_id):
         return 'Invalid ID'
 
     user['dob'] = user['dob'].strftime('%d/%m/%Y')
-    del user['hashedpwd']
-    del user['salt']
+    del user['hashedpwd'], user['salt']
     for t in ('users', 'medical_professionals', 'staff', 'admin'):
         data = user_type(user_id, t)
         if not data: continue
@@ -82,9 +106,36 @@ def get_user(user_id):
 
     return user
 
-@app.route('api/appointments/<user_id:int>')
-def get_appointments(user_id):
+@app.route('/api/appointments', method='PUT')
+def make_appointments():
+    data = request.forms
+    target = find_login(username=data['target'])
+    user = find_login(username=data['u'])
+    del data['u'], data['target']
+    data['doctor_id'] = user['user_id']
+    data['user_id'] = target['user_id']
+    if not target:
+        return 'Invalid target'
+    if not user or not user_type(data['doctor_id'], 'medical_professionals'):
+        return 'Invalid request'
+    with Connection() as db:
+        db.execute(
+            f'''
+            INSERT INTO appointments
+            ({','.join(data)})
+            VALUES ({','.join(f':{k}' for k in data)})
+            ''', **data
+        )
+        return 'OK'
 
+
+@app.route('/api/appointments/<user_id:int>')
+def get_appointments(user_id):
+    with Connection(detect_types=0) as db:
+        res = db.fetch('SELECT * from appointments WHERE user_id = (?)', user_id)
+    if type(res) is dict:
+        res = [res]
+    return {'appointments': res}
 
 def compute_hash(password, salt=None, pepper=None):
     if salt is None:

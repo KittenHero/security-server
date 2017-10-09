@@ -17,6 +17,7 @@ app = Bottle()
 @app.route('/index')
 def index():
     user = request.environ['user']
+    # TODO: sanitize output
     if not user:
         return redirect('/login')
     else:
@@ -64,44 +65,42 @@ def signup_general():
 
 @app.route('/signup_professional', method='POST')
 def signup_professional():
-    try:
-        uid = Database.MedicalProfessional.register(request.forms['user'], request.forms['password'])
-    except IntegrityError as e:
-        return template('signup_professional', messages='Username already in use')
-    user = Database.MedicalProfessional.with_id(uid)
-    user.given_name = request.forms['fname']
-    user.family_name = request.forms['lname']
-    user.dob = request.forms['dob']
-    user.update()
-    return redirect('/login')
+    r = requests.put(f'{database}/user', data=request.forms.dict)
+    if r.text == 'OK':
+        requests.put(f'{database}/med', data=request.forms.dict)
+        return redirect('/login')
+    else:
+        return template('signup_professional.html', messages=r.text)
 
 @app.route('/appointments', method='GET')
 def view_appointments():
     user = request.environ['user']
     if not user:
         return redirect('/login')
-    appointments = requests.get(f'{database}/appointments/{user["user_id"]}')
+    appointments = requests.get(f'{database}/appointments/{user["user_id"]}').json()['appointments']
+    # TODO: sanitize output
     return template('appointments.html', user=user, app=appointments)
 
 @app.route('/make_appointment', method='GET')
 def appointment_form():
-    user = request.get_cookie('session_id', secret=secret)
-    return template('make_appointment.html', user=user, userlist=Database.User.get_all())
-
-@app.route('/make_appointment/<user_id:int>', method='POST')
-def make_apointment(user_id):
-    user = request.get_cookie('session_id', secret=secret)
-
-    if not isinstance(user, Database.MedicalProfessional):
+    user = request.environ['user']
+    if not user or user['type'] != 'medical_professionals':
         return redirect('/index')
 
-    user.make_appointment(
-            Database.User.with_id(user_id),
-            info = request.forms['info'],
-            date = request.forms['date'],
-            time = request.forms['time']
-    )
-    return template('make_appointment.html', user=user, userlist=Database.User.get_all(), messages='Appointment Successfully created')
+    userlist = requests.get(f'{database}/user').json()['all users']
+    return template('make_appointment.html', user=user, userlist=userlist)
+
+@app.route('/make_appointment', method='POST')
+def make_apointment():
+    user = request.environ['user']
+
+    if not user or user['type'] != 'medical_professionals':
+        return redirect('/index')
+
+    request.forms.update(request.query)
+    r = requests.put(f'{database}/appointments', data=request.forms.dict)
+    userlist = requests.get(f'{database}/user').json()['all users']
+    return template('make_appointment.html', user=user, userlist=userlist, messages=r.text)
 
 @app.route('/logout', method=['GET', 'POST'])
 def logout():
@@ -116,6 +115,10 @@ def get_user():
     else:
         request.environ['user'] = None
 
+@app.hook('before_request')
+def sanitize_forms():
+    if 'terms' in request.forms:
+        del request.forms['terms']
 #-------------------------set up html loading------------------------
 
 TEMPLATE_PATH[:] = ['templates']

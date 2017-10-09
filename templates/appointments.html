@@ -14,9 +14,9 @@
 			<tbody>
 			% for a in app:
 				<tr>
-					<td>{{a.date}}</td>
-					<td>{{a.time}}</td>
-					<td>{{a.info}}</td>
+					<td>{{a['date']}}</td>
+					<td>{{a['time']}}</td>
+					<td>{{a['info']}}</td>
 				</tr>
 			% end
 			</tbody>
