@@ -99,6 +99,7 @@ def make_apointment():
 
     request.forms.update(request.query)
     r = requests.put(f'{database}/appointments', data=request.forms.dict)
+    # TODO: sanitize userlist
     userlist = requests.get(f'{database}/user').json()['all users']
     return template('make_appointment.html', user=user, userlist=userlist, messages=r.text)
 
