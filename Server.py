@@ -16,7 +16,7 @@ app = Bottle()
 @app.route('/')
 @app.route('/index')
 def index():
-    user = request.get_cookie('session_id', secret=secret)
+    user = request.environ['user']
     if not user:
         return redirect('/login')
     else:
@@ -24,7 +24,7 @@ def index():
 
 @app.route('/login', method='GET')
 def login_form():
-    if request.get_cookie('session_id', secret=secret):
+    if request.environ['user']:
         return redirect('/index')
     else:
         return template('login.html')
@@ -44,13 +44,13 @@ def login():
 
 @app.route('/signup_general', method='GET')
 def signup_forms_1():
-    if request.get_cookie('session_id', secret=secret):
+    if request.environ['user']:
         return redirect('/index')
     else: return template('signup_general.html')
 
 @app.route('/signup_professional', method='GET')
 def signup_forms_2():
-    if request.get_cookie('session_id', secret=secret):
+    if request.environ['user']:
         return redirect('/index')
     else: return template('signup_professional.html')
 
@@ -77,11 +77,11 @@ def signup_professional():
 
 @app.route('/appointments', method='GET')
 def view_appointments():
-    user = request.get_cookie('session_id', secret=secret)
+    user = request.environ['user']
     if not user:
         return redirect('/login')
-    else:
-        return template('appointments.html', user=user, app=user.get_appointments())
+    appointments = requests.get(f'{database}/appointments/{user["user_id"]}')
+    return template('appointments.html', user=user, app=appointments)
 
 @app.route('/make_appointment', method='GET')
 def appointment_form():
@@ -107,6 +107,14 @@ def make_apointment(user_id):
 def logout():
     response.delete_cookie('session_id')
     return redirect('/index')
+
+@app.hook('before_request')
+def get_user():
+    user_id = request.get_cookie('session_id', secret=secret)
+    if user_id is not None:
+        request.environ['user'] = requests.get(f'{database}/user/{user_id}').json()
+    else:
+        request.environ['user'] = None
 
 #-------------------------set up html loading------------------------
 

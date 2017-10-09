@@ -15,8 +15,10 @@ def user_login():
     user = find_login(username=request.forms['user'])
     if not user:
         return 'Invalid Username'
-    if compute_hash(request.forms['password'], user['salt'])[0] == user['hashedpwd']:
-        response.set_cookie('user_id', user['user_id'])
+    for pepper in hexdigits:
+        if compute_hash(request.forms['password'], user['salt'], pepper)[0] != user['hashedpwd']:
+            continue
+        response.set_cookie('user_id', str(user['user_id']))
         return 'OK'
     else:
         return 'Incorrect password'
@@ -28,6 +30,12 @@ def find_login(*args, **kwargs):
             ' '.join(f'{k} = (:{k})' for k in kwargs),
             **kwargs
         )
+
+def user_type(user_id, user_type):
+    with Connection() as db:
+        return db.fetch(f'''
+            SELECT * FROM {user_type}
+            WHERE user_id = {user_id}''')
 
 @app.route('/api/user', method='PUT')
 def register_user():
@@ -44,8 +52,6 @@ def register_user():
     del newuser['password']
     del newuser['terms']
 
-    print(newuser['dob'])
-
     with Connection() as db:
         try:
             db.execute(
@@ -58,6 +64,26 @@ def register_user():
             return 'OK'
         except sqlite3.IntegrityError:
             return 'Username already in used'
+
+@app.route('/api/user/<user_id:int>')
+def get_user(user_id):
+    user = find_login(user_id=user_id)
+    if not user:
+        return 'Invalid ID'
+
+    user['dob'] = user['dob'].strftime('%d/%m/%Y')
+    del user['hashedpwd']
+    del user['salt']
+    for t in ('users', 'medical_professionals', 'staff', 'admin'):
+        data = user_type(user_id, t)
+        if not data: continue
+        user['type'] = t
+        user.update(data)
+
+    return user
+
+@app.route('api/appointments/<user_id:int>')
+def get_appointments(user_id):
 
 
 def compute_hash(password, salt=None, pepper=None):

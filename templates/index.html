@@ -1,9 +1,7 @@
 % setdefault('messages', None)
 % setdefault('user', None)
 % include('top.html', messages=messages, user=user)
-	% for key, val in user.__dict__.items():
-		% if key != 'hashedpwd' and key != 'salt' and key != 'pepper':
-			<p>{{key}} : {{repr(val)}}</p>
-		% end
+	% for key, val in user.items():
+		<p>{{key}} : {{repr(val)}}</p>
 	% end
 % include('bottom.html')
