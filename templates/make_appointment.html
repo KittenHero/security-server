@@ -4,6 +4,7 @@
 	<table>
 		<thead>
 			<tr>
+				<th>Make an appointment</th>
 				<th>Medicare No.</th>
 				<th>Given Name</th>
 				<th>Family Name</th>
@@ -13,18 +14,18 @@
 		<tbody>
 		% for u in userlist:
 		<tr>
+			<td>
+				<form method="POST" action="/make_appointment?u={{user['username']}}&target={{u['username']}}">
+					<input type="Date" name="date" required style="width: 40%">
+					<input type="Time" name="time" required style="width: 40%">
+					<input type="text" name="info" placeholder="info" style="width: 70%">
+					<button type="submit">submit</button>
+				</form>
+			</td>
 			<td>{{u['medicare_id']}}</td>
 			<td>{{u['given_name']}}</td>
 			<td>{{u['family_name']}}</td>
 			<td>{{u['dob']}}</td>
-			<td>
-				<form method="POST" action="/make_appointment?u={{user['username']}}&target={{u['username']}}">
-					<input type="Date" name="date" required>
-					<input type="Time" name="time" required>
-					<input type="text" name="info" placeholder="info">
-					<button type="submit">make appointment</button>
-				</form>
-			</td>
 		</tr>
 		% end
 		</tbody>
