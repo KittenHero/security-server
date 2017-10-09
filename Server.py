@@ -5,7 +5,7 @@ from bottle import template
 from bottle import TEMPLATE_PATH
 from bottle import static_file
 import Database
-import random as secrets
+import secrets
 import sqlite3
 from string import printable
 from contextlib import suppress
