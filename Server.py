@@ -10,15 +10,16 @@ import requests
 import datetime as dt
 from string import printable
 from contextlib import suppress
+from collections import Mapping, Iterable
 sessions = {}
 database = f'http://{config.dbhost}:{config.dbport}/api'
+waf = f'http://{config.wafhost}:{config.wafport}/api'
 #------------------------------main logic---------------------------
 app = Bottle()
 @app.route('/')
 @app.route('/index')
 def index():
     user = request.environ['user']
-    # TODO: sanitize output
     if not user:
         return redirect('/login')
     else:
@@ -55,20 +56,24 @@ def signup_forms_2():
 
 @app.route('/signup_general', method='POST')
 def signup_general():
-    r = requests.put(f'{database}/user', data=request.forms.dict)
+    r = requests.post(f'{waf}/validate_password', data=request.forms.dict)
     if r.text == 'OK':
-        return redirect('/login')
-    else:
-        return template('signup_general.html', messages=r.text)
+        r = requests.put(f'{database}/user', data=request.forms.dict)
+        if r.text == 'OK':
+            return redirect('/login')
+
+    return template('signup_general.html', messages=r.text)
 
 @app.route('/signup_professional', method='POST')
 def signup_professional():
-    r = requests.put(f'{database}/user', data=request.forms.dict)
+    r = requests.post(f'{waf}/validate_password', data=request.forms.dict)
     if r.text == 'OK':
-        requests.put(f'{database}/med', data=request.forms.dict)
-        return redirect('/login')
-    else:
-        return template('signup_professional.html', messages=r.text)
+        r = requests.put(f'{database}/user', data=request.forms.dict)
+        if r.text == 'OK':
+            requests.put(f'{database}/med', data=request.forms.dict)
+            return redirect('/login')
+
+    return template('signup_professional.html', messages=r.text)
 
 @app.route('/appointments', method='GET')
 def view_appointments():
@@ -76,7 +81,7 @@ def view_appointments():
     if not user:
         return redirect('/login')
     appointments = requests.get(f'{database}/appointments/{user["user_id"]}').json()['appointments']
-    # TODO: sanitize output
+    escape_html(appointments)
     return template('appointments.html', user=user, app=appointments)
 
 @app.route('/make_appointment', method='GET')
@@ -86,6 +91,7 @@ def appointment_form():
         return redirect('/index')
 
     userlist = requests.get(f'{database}/user').json()['all users']
+    escape_html(userlist)
     return template('make_appointment.html', user=user, userlist=userlist)
 
 @app.route('/make_appointment', method='POST')
@@ -97,8 +103,8 @@ def make_apointment():
 
     request.forms.update(request.query)
     r = requests.put(f'{database}/appointments', data=request.forms.dict)
-    # TODO: sanitize userlist
     userlist = requests.get(f'{database}/user').json()['all users']
+    escape_html(userlist)
     return template('make_appointment.html', user=user, userlist=userlist, messages=r.text)
 
 @app.route('/logout', method=['GET', 'POST'])
@@ -117,7 +123,9 @@ def get_user():
         if limit < dt.datetime.now():
             request.environ['user'] = None
         else:
-            request.environ['user'] = requests.get(f'{database}/user/{user_id}').json()
+            user = requests.get(f'{database}/user/{user_id}').json()
+            escape_html(user)
+            request.environ['user'] = user
             limit = dt.datetime.now() + dt.timedelta(seconds=600)
             response.set_cookie('session_id', sid, max_age=600)
             sessions[sid] = (user_id, limit)
@@ -128,6 +136,23 @@ def get_user():
 def sanitize_forms():
     if 'terms' in request.forms:
         del request.forms['terms']
+
+def escape_html(iterable):
+    '''
+    So this was supposed to prevent XSS
+    but bottle simple template engine
+    already does this
+    '''
+    return
+    if isinstance(iterable, Mapping):
+        for k in iterable:
+            v = iterable[k]
+            if isinstance(v, str):
+                iterable[k] = requests.get(f'{waf}/escape_html/{v}').text
+    else:
+        for item in iterable:
+            escape_html(item)
+
 #-------------------------set up html loading------------------------
 
 TEMPLATE_PATH[:] = ['templates']
