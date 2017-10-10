@@ -20,7 +20,7 @@ def validate_password():
     if pwlen < 8:
         return 'Password Too Short (must be at least 8)'
     with open('CommonPws.txt') as common:
-        if password in common:
+        if any(map(lambda w: password.lower() == w.strip(), common)):
             return 'Common password detected'
 
     username = request.forms['username'].lower()

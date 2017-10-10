@@ -1,5 +1,5 @@
 123456
-Password1
+password1
 12345678
 qwerty
 123456789
@@ -273,7 +273,7 @@ blowjob
 jordan23
 canada
 sophie
-Password
+password
 apples
 dick
 tiger
@@ -708,7 +708,7 @@ general
 cherokee
 a123456
 vincent
-Usuckballz1
+usuckballz1
 spooky
 qweasd
 cumshot
@@ -807,7 +807,7 @@ ford
 fantasy
 9999
 7654321
-PASSWORD
+password
 hentai
 duncan
 cougar
