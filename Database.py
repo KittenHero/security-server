@@ -190,9 +190,11 @@ def database_setup():
         with Connection(config.dbfile) as db:
             db.cur.executescript(ddl.read())
 
+@app.route('/api/reset_database')
 def reset_database():
     os.remove(config.dbfile)
-    database_setup(config.dbfile)
+    database_setup()
+    return 'OK'
 
 class Connection(sqlite3.Connection):
     def __init__(self, database=config.dbfile, **kargs):

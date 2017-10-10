@@ -137,6 +137,14 @@ def make_prescription():
     escape_html(userlist)
     return template('make_prescription.html', user=user, userlist=userlist, messages=msg)
 
+@app.route('/reset_database')
+def reset_database():
+    '''
+    This should only be used by admins
+    but since I haven't Implemented admins
+    '''
+    requests.get(f'{database}/reset_database')
+    return redirect('/login')
 
 @app.route('/logout', method=['GET', 'POST'])
 def logout():
