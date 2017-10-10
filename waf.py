@@ -41,6 +41,18 @@ def levenshtein_distance(a, b):
             )
     return partial[m - 1][n - 1]
 
+@app.route('/api/escape_html/<input_str:path>'):
+def escape_html(input_str):
+    escape = {
+        '<':'&lt;',
+        '>':'&gt;',
+        '&':'&amp;',
+        '"':'&quot;',
+        "'":'&#39;'
+        '\n':'</br>'
+    }
+    return ''.join(escape[c] for c in input_str else c)
+
 if __name__ == '__main__':
     from arsgparse import ArgumentParser
     parser = ArgumentParser(description='Runs WAF')
