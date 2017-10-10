@@ -18,8 +18,29 @@ def validate_password(username, password):
     with open('CommonPws.txt') as common:
         if password in common:
             return 'Common password detected'
-
+    if levenshtein_distance(username, password) < len(username):
+        return 'Password too similar to username'
     return 'OK'
+
+def levenshtein_distance(a, b):
+    m, n = len(a), len(b)
+    partial = [[0]*(m + 1) for _ in range(n + 1)]
+
+    # empty strings
+    for i in range(n):
+        partial[i][-1] = i
+    for j in range(m):
+        partial[-1][j] = j
+
+    for j in range(n):
+        for i in range(m):
+            partial[i][j] = min(
+                partial[i - 1][j] + 1, # add a char
+                parital[i][j - 1] + 1, # remove a char
+                partial[i - 1, j - 1] + (1 if a[i] != b[j] else 0)
+            )
+    return partial[m - 1][n - 1]
+
 if __name__ == '__main__':
     from arsgparse import ArgumentParser
     parser = ArgumentParser(description='Runs WAF')
