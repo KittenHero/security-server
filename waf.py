@@ -33,6 +33,14 @@ def checkPasswordValid(username, password):
     # print('x')
     # return 0
 
+
+def escape_html(input_str):
+    rlist = [('<','&lt;'), ('>','&gt;'), ('&','&amp;'), ('"','&quot;'),('\n','</br>')]
+
+    for (x,y) in rlist:
+        input_str = input_str.replace(x,y)
+    return input_str
+
 if __name__ == '__main__':
     from argparse import ArgumentParser
     parser = ArgumentParser(description='Runs WAF')
