@@ -33,13 +33,17 @@ def checkPasswordValid(username, password):
     # print('x')
     # return 0
 
-
+@app.route('/api/escape_html/<input_str:path>'):
 def escape_html(input_str):
-    rlist = [('<','&lt;'), ('>','&gt;'), ('&','&amp;'), ('"','&quot;'),('\n','</br>')]
-
-    for (x,y) in rlist:
-        input_str = input_str.replace(x,y)
-    return input_str
+    escape = {
+        '<':'&lt;',
+        '>':'&gt;',
+        '&':'&amp;',
+        '"':'&quot;',
+        "'":'&#39;'
+        '\n':'</br>'
+    }
+    return ''.join(escape[c] for c in input_str else c)
 
 if __name__ == '__main__':
     from argparse import ArgumentParser
