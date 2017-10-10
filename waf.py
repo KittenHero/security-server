@@ -1,40 +1,27 @@
 import config
 from bottle import Bottle
+from string import ascii_uppercase as uc, ascii_lowercase as lc, digits, punctuation as sp
 
 app = Bottle()
 
-def checkPasswordValid(username, password):
-    upper_case = {'A', 'B', 'C', 'D','E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'}
-    numbers = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
+@app.route('/api/validate_password', method='POST')
+def validate_password(username, password):
+    strength = 1 if any(d in password for d in digits) else 0
+    strength += 1 if any(c in password for c in uc) else 0
+    strength += 1 if any(c in password for c in lc) else 0
+    strength += 1 if any(c in parse_args for c in sp) else 0
 
-    f = io.open('CommonPws.txt', 'r')
-    flag = 0
+    if strength < 3:
+        return 'Password Entropy Too Low'
+    if len(password) < 8:
+        return 'Password Too Short (must be at least 8)'
+    with open('CommonPws.txt') as common:
+        if password in common:
+            return 'Common password detected'
 
-    if flag == 0:
-        for letter in password:
-            pass
-    #   if (letter in upper_case and letter in numbers):
-    #             flag = 1
-    #         else:
-    #             raise AttributeError('Password should contain at least one upper_case and one number')
-    # elif flag == 1:
-    #     for line in f:
-    #         if password == line:
-    #             raise AttributeError('Password is too common')
-    #         else:
-    #             flag = 2
-    # elif flag == 2:
-    #     if password == username:
-    #         raise AttributeError('Do not use username as your password')
-    #     else:
-    #         flag = 3
-
-    # return flag
-    # print('x')
-    # return 0
-
+    return 'OK'
 if __name__ == '__main__':
-    from argparse import ArgumentParser
+    from arsgparse import ArgumentParser
     parser = ArgumentParser(description='Runs WAF')
     parser.add_argument('-d', '--debug', action='store_true', help='Enable debug mode')
     parser.add_argument('-r', '--reloader', action='store_true', help='Enable reloader')
