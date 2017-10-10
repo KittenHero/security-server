@@ -3,11 +3,11 @@ import os
 
 def main():
     if os.fork():
-        subprocess.call(['python3', 'Server.py'])
+        subprocess.call(['python3.6', 'Server.py'])
     elif os.fork():
-        subprocess.call(['python3', 'Database.py'])
+        subprocess.call(['python3.6', 'Database.py'])
     elif os.fork():
-        subprocess.call(['python3', 'waf.py'])
+        subprocess.call(['python3.6', 'waf.py'])
 
 if __name__ == '__main__':
     main()
