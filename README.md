@@ -8,6 +8,6 @@ Requirements
 
 How to run
 ------------
-$ `python Server.py`
+$ `python run.py`
 
-+ add -h for list of options
++ modify config.py for config
