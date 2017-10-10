@@ -1,14 +1,19 @@
 body{
     background: url('../img/4.jpg') no-repeat center center fixed;
-    opacity: 0.7;
     -webkit-background-size: cover;
     -moz-background-size: cover;
     -o-background-size: cover;
-    background-size: cover
+    background-size: cover;
+}
+
+table {
+	align: center;
+	margin-left:auto; 
+	margin-right:auto;
 }
 
 table, th, td{
-    width: 100%;
+    width: auto;
     border: 1px solid black;
     border-collapse: collapse;
 }
@@ -18,9 +23,22 @@ th, td{
     text-align: center;
 }
 
-div #topnav{
-    margin-left: auto;
-    margin-right: auto;
+#topnav {
+    margin: auto;
+    padding: 0;
+    background-color: transparent;
+}
+
+#message {
+    margin: auto;
+    background-color: red;
+    color: white;
+}
+
+div {
+    margin: 20px;
+    padding: 20px;
+    background-color: #ffffff;
 }
 
 ul {
@@ -70,16 +88,16 @@ input:focus{
     background: lightblue;
 }
 
-.logreg{
-    position: absolute;
-    width: 300px;
-    height: 200px;
-    z-index: 15;
-    top: 50%;
-    left: 50%;
-    margin: -100px 0 0 -150px;
-    background: inherit;
+.logreg {
+    background-color: white;
+    padding-left: 20%;
+    padding-right: 20%;
+    opacity: 0.7;
     text-align: center;
+}
+
+.logreg > * {
+    float: none; 
 }
 
 button{

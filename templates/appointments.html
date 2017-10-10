@@ -2,6 +2,7 @@
 % setdefault('messages', None)
 % setdefault('user', None)
 % include('top.html', messages=messages, user=user)
+	<div>
 	% if app:
 		<table>
 			<thead>
@@ -24,4 +25,5 @@
 	% else:
 		<p>You have no appointments</p>
 	% end
+	</div>
 % include('bottom.html')
