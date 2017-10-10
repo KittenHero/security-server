@@ -7,7 +7,6 @@ app = Bottle()
 
 @app.route('/api/validate_password', method='POST')
 def validate_password():
-    username = request.forms['username']
     password = request.forms['password']
 
     strength = 1 if any(d in password for d in digits) else 0
@@ -24,12 +23,15 @@ def validate_password():
         if password in common:
             return 'Common password detected'
 
+    username = request.forms['username'].lower()
+    password = password.lower()
     if levenshtein_distance(username, password) < min(len(username), pwlen):
         return 'Password too similar to username'
 
-    given = request.forms['given_name']
-    fam = request.forms['family_name']
-    if levenshtein_distance(given, password) < min(len(given), pwlen) or levenshtein_distance(fam, password) < min(len(fam), pwlen):
+    given = request.forms['given_name'].lower()
+    fam = request.forms['family_name'].lower()
+    if levenshtein_distance(given, password) < min(len(given), pwlen) or \
+        levenshtein_distance(fam, password) < min(len(fam), pwlen):
         return 'Password too similar to name'
     return 'OK'
 

@@ -128,7 +128,6 @@ def make_appointments():
         )
         return 'OK'
 
-
 @app.route('/api/appointments/<user_id:int>')
 def get_appointments(user_id):
     with Connection(detect_types=0) as db:
@@ -136,6 +135,36 @@ def get_appointments(user_id):
     if type(res) is dict:
         res = [res]
     return {'appointments': res}
+
+@app.route('/api/prescription', method='PUT')
+def make_prescription():
+    data = request.forms
+    target = find_login(username=data['target'])
+    user = find_login(username=data['u'])
+    del data['u'], data['target']
+    data['prescribed_by'] = user['user_id']
+    data['user_id'] = target['user_id']
+    if not target:
+        return 'Invalid target'
+    if not user or not user_type(data['prescribed_by'], 'medical_professionals'):
+        return 'Invalid request'
+    with Connection() as db:
+        db.execute(
+            f'''
+            INSERT INTO prescriptions
+            ({','.join(data)})
+            VALUES ({','.join(f':{k}' for k in data)})
+            ''', **data
+        )
+        return 'OK'
+
+@app.route('/api/prescription/<user_id:int>')
+def get_prescriptions(user_id):
+    with Connection(detect_types=0) as db:
+        res = db.fetch('SELECT * from prescriptions WHERE user_id = (?)', user_id)
+    if type(res) is dict:
+        res = [res]
+    return {'prescriptions': res}
 
 def compute_hash(password, salt=None, pepper=None):
     if salt is None:

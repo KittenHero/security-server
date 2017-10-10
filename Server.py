@@ -102,10 +102,41 @@ def make_apointment():
         return redirect('/index')
 
     request.forms.update(request.query)
-    r = requests.put(f'{database}/appointments', data=request.forms.dict)
+    msg = requests.put(f'{database}/appointments', data=request.forms.dict).text
     userlist = requests.get(f'{database}/user').json()['all users']
     escape_html(userlist)
-    return template('make_appointment.html', user=user, userlist=userlist, messages=r.text)
+    return template('make_appointment.html', user=user, userlist=userlist, messages=msg)
+
+@app.route('/prescriptions')
+def get_prescriptions():
+    user = request.environ['user']
+    if not user or user['type'] != 'users':
+        return redirect('/login')
+    prescriptions = requests.get(f'{database}/prescription/{user["user_id"]}').json()['prescriptions']
+    escape_html(prescriptions)
+    return template('prescription.html', user=user, pres=prescriptions)
+
+@app.route('/make_prescriptions')
+def prescription_forms():
+    user = request.environ['user']
+    if not user or user['type'] != 'medical_professionals':
+        return redirect('/login')
+    userlist = requests.get(f'{database}/user').json()['all users']
+    escape_html(userlist)
+    return template('make_prescription.html', user=user, userlist=userlist)
+
+@app.route('/make_prescriptions', method='POST')
+def make_prescription():
+    user = request.environ['user']
+    if not user or user['type'] != 'medical_professionals':
+        return redirect('/login')
+    request.forms.update(request.query)
+    msg = requests.put(f'{database}/prescription', data=request.forms.dict).text
+
+    userlist = requests.get(f'{database}/user').json()['all users']
+    escape_html(userlist)
+    return template('make_prescription.html', user=user, userlist=userlist, messages=msg)
+
 
 @app.route('/logout', method=['GET', 'POST'])
 def logout():

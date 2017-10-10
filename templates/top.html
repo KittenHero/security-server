@@ -16,8 +16,10 @@
 					<li><a href='/logout'>Log out</a></li>
 					% if user['type'] == 'users':
 					<li><a href='/appointments'>Appointments</a></li>
+					<li><a href='/prescriptions'>Prescriptions</a></li>
 					% elif user['type'] == 'medical_professionals':
 					<li><a href='/make_appointment'>Make Appointments</a></li>
+					<li><a href='/make_prescriptions'>Make Prescriptions</a></li>
 					% end
 					% else:
 					<li><a href='/login'>Log in</a></li>

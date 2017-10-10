@@ -1,0 +1,32 @@
+% setdefault('messages', None)
+% setdefault('user', None)
+% include('top.html', messages=messages, user=user)
+	<div>
+	% if pres:
+		<table>
+			<thead>
+				<tr>
+					<th>date prescribed</th>
+					<th>medication</th>
+					<th>dosage</th>
+					<th>frequency</th>
+					<th>time</th>
+				</tr>
+			</thead>
+			<tbody>
+			% for p in pres:
+				<tr>
+					<td>{{ p['date_prescribed'] }}</td>
+					<td>{{ p['medication'] }}</td>
+					<td>{{ p['dosage'] }}</td>
+					<td>{{ p['frequency'] }}</td>
+					<td>{{ p['time'] }}</td>
+				</tr>
+			% end
+			</tbody>
+		</table>
+	% else:
+		<p>You have no prescriptions</p>
+	% end
+	</div>
+% include('bottom.html')
