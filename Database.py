@@ -1,11 +1,12 @@
 import Crypto.Hash.SHA512 as SHA512
 import secrets
+import random
 import config
 from bottle import Bottle
 from bottle import request, response
 import sqlite3
 import os
-from string import hexdigits, printable
+from string import hexdigits, printable, digits
 import datetime as  dt
 
 app = Bottle()
@@ -64,16 +65,27 @@ def register_user():
                 VALUES ({", ".join(f":{k}" for k in newuser)});
                 ''', **newuser
             )
+            med_id = generate_medicare()
             db.execute(
                 f'''
-                INSERT INTO users (user_id)
-                SELECT user_id FROM login
+                INSERT INTO users (user_id, medicare_id)
+                SELECT user_id, :med_id FROM login
                 WHERE {" AND ".join(f"{k} = :{k}" for k in newuser)}
-                ''', **newuser
+                ''', med_id=med_id, **newuser
             )
             return 'OK'
         except sqlite3.IntegrityError:
             return 'Username already in used'
+
+def generate_medicare():
+    def random_id():
+        return ''.join(random.choice(digits) for _ in range(10))
+    with Connection() as db:
+        med_id = random_id()
+        existing = db.fetch('SELECT medicare_id FROM users')
+    while med_id in existing:
+        med_id = random_id()
+    return med_id
 
 @app.route('/api/med', method='PUT')
 def register_med():
