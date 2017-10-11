@@ -2,6 +2,7 @@ import config
 from bottle import Bottle
 from bottle import request
 from string import ascii_uppercase as uc, ascii_lowercase as lc, digits, punctuation as sp
+from time import time, asctime, localtime
 
 app = Bottle()
 
@@ -73,7 +74,7 @@ def detect_attack(input_str):
         if input_str.find(s) != -1:
             attack_ip = request.environ.get('REMOTE_ADDR')
             fp = open('attack_log.txt','a')
-            fp.write('Attack detected by {}\n'.format(attack_ip))
+            fp.write('Attack detected by {} at {}\n'.format(attack_ip,asctime(localtime(time()))))
             return -1
     return 0
 
