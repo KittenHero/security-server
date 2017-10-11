@@ -66,6 +66,17 @@ def escape_html(input_str):
     }
     return ''.join(escape[c] if c in escape else c for c in input_str)
 
+def detect_attack(input_str):
+    blacklist = ('<script>','<','%3C','%3E','>','select','drop',';','<img src')
+
+    for s in blacklist:
+        if input_str.find(s) != -1:
+            attack_ip = request.environ.get('REMOTE_ADDR')
+            fp = open('attack_log.txt','a')
+            fp.write('Attack detected by {}\n'.format(attack_ip))
+            return -1
+    return 0
+
 if __name__ == '__main__':
     from argparse import ArgumentParser
     parser = ArgumentParser(description='Runs WAF')
